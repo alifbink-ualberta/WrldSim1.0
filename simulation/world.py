@@ -2,6 +2,7 @@ from simulation.person import Person
 from simulation.event import Event
 from systems.needs import update_needs
 from systems.decision_making import choose_action
+from systems.routines import get_routine_location
 
 class World:
 
@@ -14,17 +15,30 @@ class World:
         self.people = []
         self.events = []
 
-    # -------------------------
-    # PEOPLE
-    # -------------------------
+        self.locations = {}
+
+    def add_location(self, location):
+
+        self.locations[location.name] = location
 
     def add_person(self, person):
 
         self.people.append(person)
 
-    # -------------------------
-    # EVENTS
-    # -------------------------
+    def move_person(self, person, location_name):
+
+        if location_name not in self.locations:
+            return
+
+        # Remove them from their current location
+        for location in self.locations.values():
+
+            location.leave(person)
+
+        # Move them
+        location = self.locations[location_name]
+
+        location.enter(person)
 
     def create_event(
         self,
@@ -51,9 +65,39 @@ class World:
 
         return event
 
-    # -------------------------
-    # TIME
-    # -------------------------
+    def check_encounters(self):
+
+        for location in self.locations.values():
+
+            if len(location.people) < 2:
+                continue
+
+            for i in range(
+                len(location.people)
+            ):
+
+                for j in range(
+                    i + 1,
+                    len(location.people)
+                ):
+
+                    person_a = location.people[i]
+                    person_b = location.people[j]
+
+                    self.create_event(
+                        description=(
+                            f"{person_a.name} "
+                            f"encountered "
+                            f"{person_b.name}."
+                        ),
+                        participants=[
+                            person_a.name,
+                            person_b.name
+                        ],
+                        location=location.name,
+                        importance=10
+                    )
+
 
     def advance_day(self):
 
@@ -72,10 +116,6 @@ class World:
             for person in self.people:
                 person.age += 1
 
-    # -------------------------
-    # SIMULATION
-    # -------------------------
-
     def simulate_day(self):
 
         for person in self.people:
@@ -84,11 +124,25 @@ class World:
 
             action = choose_action(person)
 
-            result = person.perform_action(
-                action
+            person.perform_action(action)
+
+            routine = get_routine_location(person)
+
+            location_index = (
+                self.day - 1
+            ) % len(routine)
+
+            destination = routine[location_index]
+
+            self.move_person(
+                person,
+                destination
             )
 
-            print(result)
+        self.check_encounters()
+
+        for event in self.events[-10:]:
+            print(event)
 
         self.advance_day()
 

@@ -1,5 +1,6 @@
 from simulation.world import World
 from simulation.person import Person
+from simulation.location import Location
 
 
 def main():
@@ -90,7 +91,7 @@ def main():
         money=120
     )
 
-    thorIN = Person(
+    thorin = Person(
         name="Thorin",
         age=58,
         species="Dwarf",
@@ -134,7 +135,7 @@ def main():
         "Become a respected scholar"
     ]
 
-    thorIN.goals = [
+    thorin.goals = [
         "Master his craft",
         "Teach his knowledge to someone worthy"
     ]
@@ -148,11 +149,26 @@ def main():
         hassan,
         gorak,
         elira,
-        thorIN
+        thorin
     ]
+
+    # =========================
+    # ADD LOCATIONS TO WORLD
+    # =========================
+    world.add_location(Location("Home"))
+    world.add_location(Location("Market"))
+    world.add_location(Location("Tavern"))
+    world.add_location(Location("Workshop"))
+    world.add_location(Location("Farm"))
+    world.add_location(Location("Library"))
+    world.add_location(Location("Forest"))
 
     for person in people:
         world.add_person(person)
+        world.move_person(
+            person,
+            "Home"
+        )
 
     # =========================
     # INITIAL WORLD STATE
