@@ -1,17 +1,29 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class Event:
 
+    year: int
+    month: int
     day: int
-    hour: int
+
     description: str
+
+    participants: list[str] = field(
+        default_factory=list
+    )
+
+    location: str = ""
+
+    importance: int = 50
 
     def __str__(self):
 
-        return (
-            f"[Day {self.day} "
-            f"{self.hour:02d}:00] "
-            f"{self.description}"
+        date = (
+            f"Year {self.year}, "
+            f"Month {self.month}, "
+            f"Day {self.day}"
         )
+
+        return f"[{date}] {self.description}"

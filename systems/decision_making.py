@@ -1,44 +1,89 @@
-import random
+from systems.actions import get_available_actions
 
 
-def choose_action(person, world):
+def score_action(person, action):
 
-    # Critical needs override everything else.
+    score = 0
 
-    if person.hunger >= 80:
-        return "EAT"
+    # -------------------------
+    # SURVIVAL
+    # -------------------------
 
-    if person.energy <= 15:
-        return "SLEEP"
+    if action == "eat":
 
-    if person.social <= 20:
-        return "TALK"
+        score += person.hunger * 2
 
-    # Personality influences behavior.
+    if action == "sleep":
 
-    choices = []
+        score += (100 - person.energy) * 2
 
-    # Everyone needs to work.
-    choices += ["WORK"] * 5
+    # -------------------------
+    # WORK
+    # -------------------------
 
-    # Sociable people talk more.
-    choices += [
-        "TALK"
-    ] * max(
-        1,
-        person.sociability // 20
+    if action == "work":
+
+        score += person.conscientiousness
+
+        # Ambitious people value productive work
+        score += person.machiavellianism * 0.3
+        score += person.narcissism * 0.2
+
+    # -------------------------
+    # SOCIALIZE
+    # -------------------------
+
+    if action == "socialize":
+
+        score += person.extraversion
+
+        score += person.agreeableness * 0.3
+
+    # -------------------------
+    # PRACTICE
+    # -------------------------
+
+    if action == "practice":
+
+        score += person.conscientiousness * 0.7
+        score += person.openness * 0.4
+
+    # -------------------------
+    # EXPLORE
+    # -------------------------
+
+    if action == "explore":
+
+        score += person.openness
+        score += person.extraversion * 0.3
+
+        # Neurotic people are less inclined
+        # toward unfamiliar situations
+        score -= person.neuroticism * 0.4
+
+    return score
+
+
+def choose_action(person):
+
+    actions = get_available_actions(person)
+
+    scored_actions = []
+
+    for action in actions:
+
+        score = score_action(
+            person,
+            action
+        )
+
+        scored_actions.append(
+            (action, score)
+        )
+
+    scored_actions.sort(
+        key=lambda x: x[1],
+        reverse=True
     )
 
-    # Curious people explore.
-    if person.curiosity >= 60:
-
-        choices += [
-            "EXPLORE"
-        ] * 2
-
-    # Sometimes people rest.
-    choices += [
-        "REST"
-    ] * 2
-
-    return random.choice(choices)
+    return scored_actions[0][0]

@@ -1,16 +1,11 @@
 def update_needs(person):
 
-    person.hunger = min(
-        100,
-        person.hunger + 2
-    )
+    # Hunger increases every day
+    person.hunger += 5
 
-    person.energy = max(
-        0,
-        person.energy - 2
-    )
+    # Energy decreases throughout the day
+    person.energy -= 10
 
-    person.social = max(
-        0,
-        person.social - 1
-    )
+    # Keep values within bounds
+    person.hunger = min(person.hunger, 100)
+    person.energy = max(person.energy, 0)
