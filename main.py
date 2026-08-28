@@ -188,7 +188,7 @@ def main():
     # RUN SIMULATION
     # =========================
 
-    world.run(years=1)
+    world.run_days(10)
 
     # =========================
     # FINAL STATE

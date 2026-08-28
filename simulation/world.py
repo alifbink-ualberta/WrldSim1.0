@@ -118,31 +118,29 @@ class World:
 
     def simulate_day(self):
 
+        print(
+            f"\n--- Year {self.year}, "
+            f"Month {self.month}, "
+            f"Day {self.day} ---"
+        )
+
         for person in self.people:
 
             update_needs(person)
 
-            action = choose_action(person)
-
-            person.perform_action(action)
-
-            routine = get_routine_location(person)
-
-            location_index = (
-                self.day - 1
-            ) % len(routine)
-
-            destination = routine[location_index]
-
-            self.move_person(
+            action, score = choose_action(
                 person,
-                destination
+                self
             )
 
-        self.check_encounters()
+            result = person.perform_action(
+                action
+            )
 
-        for event in self.events[-10:]:
-            print(event)
+            print(
+                f"{result} "
+                f"[score: {score:.1f}]"
+            )
 
         self.advance_day()
 
@@ -151,5 +149,11 @@ class World:
         total_days = years * 360
 
         for _ in range(total_days):
+
+            self.simulate_day()
+
+    def run_days(self, days):
+
+        for _ in range(days):
 
             self.simulate_day()

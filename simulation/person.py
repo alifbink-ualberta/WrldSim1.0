@@ -107,62 +107,92 @@ class Person:
 
     def perform_action(self, action):
 
-        if action == "eat":
+        if action.action_type == "eat":
 
             self.hunger = max(
                 0,
                 self.hunger - 50
             )
 
-            self.energy -= 5
+            self.energy = max(
+                0,
+                self.energy - 5
+            )
 
-            return f"{self.name} ate a meal."
+            return f"{self.name} ate."
 
-        elif action == "sleep":
+        elif action.action_type == "sleep":
 
             self.energy = min(
                 100,
                 self.energy + 60
             )
 
-            return f"{self.name} went to sleep."
+            return f"{self.name} slept."
 
-        elif action == "work":
+        elif action.action_type == "work":
 
-            self.energy -= 15
-            self.hunger += 5
+            self.energy = max(
+                0,
+                self.energy - 15
+            )
+
+            self.hunger = min(
+                100,
+                self.hunger + 5
+            )
+
             self.money += 5
 
             return (
-                f"{self.name} worked as a "
-                f"{self.occupation}."
+                f"{self.name} worked "
+                f"as a {self.occupation}."
             )
 
-        elif action == "socialize":
+        elif action.action_type == "practice":
 
-            self.energy -= 5
-
-            return (
-                f"{self.name} spent time "
-                f"socializing."
+            self.energy = max(
+                0,
+                self.energy - 10
             )
 
-        elif action == "practice":
-
-            self.energy -= 10
+            self.hunger = min(
+                100,
+                self.hunger + 3
+            )
 
             return (
                 f"{self.name} practiced "
                 f"their skills."
             )
 
-        elif action == "explore":
+        elif action.action_type == "socialize":
 
-            self.energy -= 10
-
-            return (
-                f"{self.name} explored "
-                f"the surrounding area."
+            self.energy = max(
+                0,
+                self.energy - 5
             )
 
-        return f"{self.name} did nothing."
+            return (
+                f"{self.name} socialized."
+            )
+
+        elif action.action_type == "explore":
+
+            self.energy = max(
+                0,
+                self.energy - 10
+            )
+
+            self.hunger = min(
+                100,
+                self.hunger + 3
+            )
+
+            return (
+                f"{self.name} explored."
+            )
+
+        return (
+            f"{self.name} did nothing."
+        )
