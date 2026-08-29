@@ -251,7 +251,7 @@ def main():
     # RUN SIMULATION
     # =========================
 
-    world.run_hours(24)
+    world.run_hours(30)
 
     # =========================
     # FINAL STATE

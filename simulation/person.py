@@ -1,5 +1,6 @@
 class Person:
 
+
     def __init__(
         self,
         name,
@@ -34,6 +35,7 @@ class Person:
         # PERSONALITY
         # =========================
 
+        # Big Five
         self.openness = openness
         self.conscientiousness = conscientiousness
         self.extraversion = extraversion
@@ -58,7 +60,6 @@ class Person:
         # =========================
 
         self.money = money
-
         self.inventory = {}
 
         # =========================
@@ -66,15 +67,20 @@ class Person:
         # =========================
 
         self.goals = []
-
         self.beliefs = []
 
         # =========================
         # SOCIAL
         # =========================
 
+        # Dictionary:
+        #
+        # other_person -> Relationship object
+        #
         self.relationships = {}
 
+        # Events and experiences this person
+        # personally remembers.
         self.memories = []
 
         # =========================
@@ -136,7 +142,6 @@ class Person:
             return False
 
         self.money -= amount
-
         return True
 
     # ==================================================
@@ -145,11 +150,31 @@ class Person:
 
     def get_relationship(self, other):
 
-        if other.name not in self.relationships:
+        from simulation.relationship import Relationship
 
-            self.relationships[other.name] = 0
+        if other == self:
+            return None
 
-        return self.relationships[other.name]
+        # If no relationship exists yet,
+        # create one.
+        if other not in self.relationships:
+
+            relationship = Relationship(
+                self,
+                other
+            )
+
+            self.relationships[other] = relationship
+
+            # The relationship object is shared
+            # between both people.
+            other.relationships[self] = relationship
+
+        return self.relationships[other]
+
+    def get_known_people(self):
+
+        return list(self.relationships.keys())
 
     def change_relationship(
         self,
@@ -157,13 +182,54 @@ class Person:
         amount
     ):
 
-        current = self.get_relationship(other)
+        """
+        Compatibility helper for the old
+        buy/sell system.
 
-        self.relationships[other.name] = max(
+        A positive amount currently affects
+        trust and affection in both directions.
+
+        This will later become much more nuanced.
+        """
+
+        if other == self:
+            return
+
+        relationship = self.get_relationship(
+            other
+        )
+
+        # Person A's feelings toward B
+        relationship.trust_a_to_b = max(
             -100,
             min(
                 100,
-                current + amount
+                relationship.trust_a_to_b + amount
+            )
+        )
+
+        relationship.affection_a_to_b = max(
+            -100,
+            min(
+                100,
+                relationship.affection_a_to_b + amount
+            )
+        )
+
+        # Person B's feelings toward A
+        relationship.trust_b_to_a = max(
+            -100,
+            min(
+                100,
+                relationship.trust_b_to_a + amount
+            )
+        )
+
+        relationship.affection_b_to_a = max(
+            -100,
+            min(
+                100,
+                relationship.affection_b_to_a + amount
             )
         )
 
@@ -179,7 +245,11 @@ class Person:
     # ACTION EXECUTION
     # ==================================================
 
-    def perform_action(self, action):
+    def perform_action(
+        self,
+        action,
+        world
+    ):
 
         action_type = action.action_type
 
@@ -206,8 +276,47 @@ class Person:
                     self.energy - 2
                 )
 
+                self.remember({
+                    "type": "personal",
+                    "year": world.year,
+                    "month": world.month,
+                    "day": world.day,
+                    "hour": world.hour,
+                    "description": "Ate food."
+                })
+
                 return (
                     f"{self.name} ate food."
+                )
+
+            elif self.has_item("meat"):
+
+                self.remove_item(
+                    "meat",
+                    1
+                )
+
+                self.hunger = max(
+                    0,
+                    self.hunger - 50
+                )
+
+                self.energy = max(
+                    0,
+                    self.energy - 2
+                )
+
+                self.remember({
+                    "type": "personal",
+                    "year": world.year,
+                    "month": world.month,
+                    "day": world.day,
+                    "hour": world.hour,
+                    "description": "Ate meat."
+                })
+
+                return (
+                    f"{self.name} ate meat."
                 )
 
             else:
@@ -226,6 +335,15 @@ class Person:
                 100,
                 self.energy + 60
             )
+
+            self.remember({
+                "type": "personal",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "description": "Slept."
+            })
 
             return (
                 f"{self.name} slept."
@@ -344,6 +462,7 @@ class Person:
             )
 
             if seller is None:
+
                 return (
                     f"{self.name} "
                     f"could not buy anything."
@@ -386,25 +505,36 @@ class Person:
                 total_price
             )
 
-            self.remember(
-                f"Bought {amount} "
-                f"{item} from "
-                f"{seller.name}."
-            )
+            self.remember({
+                "type": "trade",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "other": seller.name,
+                "description": (
+                    f"Bought {amount} "
+                    f"{item} from "
+                    f"{seller.name}."
+                )
+            })
 
-            seller.remember(
-                f"Sold {amount} "
-                f"{item} to "
-                f"{self.name}."
-            )
+            seller.remember({
+                "type": "trade",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "other": self.name,
+                "description": (
+                    f"Sold {amount} "
+                    f"{item} to "
+                    f"{self.name}."
+                )
+            })
 
             self.change_relationship(
                 seller,
-                2
-            )
-
-            seller.change_relationship(
-                self,
                 2
             )
 
@@ -431,6 +561,7 @@ class Person:
             )
 
             if buyer is None:
+
                 return (
                     f"{self.name} "
                     f"could not sell anything."
@@ -473,25 +604,36 @@ class Person:
                 total_price
             )
 
-            self.remember(
-                f"Sold {amount} "
-                f"{item} to "
-                f"{buyer.name}."
-            )
+            self.remember({
+                "type": "trade",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "other": buyer.name,
+                "description": (
+                    f"Sold {amount} "
+                    f"{item} to "
+                    f"{buyer.name}."
+                )
+            })
 
-            buyer.remember(
-                f"Bought {amount} "
-                f"{item} from "
-                f"{self.name}."
-            )
+            buyer.remember({
+                "type": "trade",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "other": self.name,
+                "description": (
+                    f"Bought {amount} "
+                    f"{item} from "
+                    f"{self.name}."
+                )
+            })
 
             self.change_relationship(
                 buyer,
-                2
-            )
-
-            buyer.change_relationship(
-                self,
                 2
             )
 
@@ -508,13 +650,33 @@ class Person:
 
         elif action_type == "socialize":
 
+            from systems.social import (
+                choose_social_target,
+                social_interaction
+            )
+
             self.energy = max(
                 0,
                 self.energy - 4
             )
 
-            return (
-                f"{self.name} socialized."
+            target = choose_social_target(
+                self,
+                world
+            )
+
+            if target is None:
+
+                return (
+                    f"{self.name} wanted "
+                    f"to socialize, but "
+                    f"nobody was available."
+                )
+
+            return social_interaction(
+                self,
+                target,
+                world
             )
 
         # -------------------------
@@ -536,6 +698,10 @@ class Person:
             return (
                 f"{self.name} explored."
             )
+
+        # -------------------------
+        # UNKNOWN ACTION
+        # -------------------------
 
         return (
             f"{self.name} did nothing."

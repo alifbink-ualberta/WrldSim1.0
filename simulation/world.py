@@ -140,6 +140,9 @@ class World:
                 self
             )
 
+            if action is None:
+                continue
+
             duration = get_action_duration(
                 action.action_type
             )
@@ -151,7 +154,8 @@ class World:
 
             # Execute the initial effects
             result = person.perform_action(
-                action
+                action,
+                self
             )
 
             print(
