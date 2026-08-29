@@ -1,4 +1,7 @@
 from simulation.action import Action
+from systems.opportunities import (
+    generate_trade_opportunities
+)
 
 
 def get_action_duration(action_type):
@@ -10,7 +13,9 @@ def get_action_duration(action_type):
         "work": 4,
         "practice": 2,
         "socialize": 2,
-        "explore": 4
+        "explore": 4,
+        "buy": 1,
+        "sell": 1
     }
 
     return durations.get(
@@ -23,9 +28,9 @@ def generate_actions(person, world):
 
     actions = []
 
-    # =============================
+    # =================================
     # SURVIVAL
-    # =============================
+    # =================================
 
     if person.hunger >= 40:
 
@@ -49,9 +54,9 @@ def generate_actions(person, world):
             )
         )
 
-    # =============================
+    # =================================
     # OCCUPATION
-    # =============================
+    # =================================
 
     actions.append(
         Action(
@@ -61,9 +66,9 @@ def generate_actions(person, world):
         )
     )
 
-    # =============================
-    # PERSONAL DEVELOPMENT
-    # =============================
+    # =================================
+    # DEVELOPMENT
+    # =================================
 
     actions.append(
         Action(
@@ -73,9 +78,9 @@ def generate_actions(person, world):
         )
     )
 
-    # =============================
+    # =================================
     # SOCIAL
-    # =============================
+    # =================================
 
     actions.append(
         Action(
@@ -85,9 +90,9 @@ def generate_actions(person, world):
         )
     )
 
-    # =============================
+    # =================================
     # EXPLORATION
-    # =============================
+    # =================================
 
     actions.append(
         Action(
@@ -96,5 +101,30 @@ def generate_actions(person, world):
             reason="curiosity"
         )
     )
+
+    # =================================
+    # ECONOMIC OPPORTUNITIES
+    # =================================
+
+    opportunities = generate_trade_opportunities(
+        person,
+        world
+    )
+
+    for opportunity in opportunities:
+
+        action = Action(
+            actor=person,
+            action_type=opportunity.action_type,
+            target=opportunity.target,
+            reason=opportunity.reason
+        )
+
+        # Attach trade information
+        action.item = opportunity.item
+        action.amount = opportunity.amount
+        action.price = opportunity.price
+
+        actions.append(action)
 
     return actions

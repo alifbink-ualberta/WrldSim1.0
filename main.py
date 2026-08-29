@@ -48,7 +48,7 @@ def main():
         sadism=5,
 
         occupation="Merchant",
-        money=180
+        money=200
     )
 
     gorak = Person(
@@ -152,29 +152,79 @@ def main():
         thorin
     ]
 
-    mariam.add_item("food", 10)
-    hassan.add_item("food", 8)
-    gorak.add_item("food", 8)
-    elira.add_item("food", 8)
-    thorin.add_item("food", 10)
-
-    # =========================
-    # ADD LOCATIONS TO WORLD
-    # =========================
-    world.add_location(Location("Home"))
-    world.add_location(Location("Market"))
-    world.add_location(Location("Tavern"))
-    world.add_location(Location("Workshop"))
-    world.add_location(Location("Farm"))
-    world.add_location(Location("Library"))
-    world.add_location(Location("Forest"))
-
     for person in people:
         world.add_person(person)
-        world.move_person(
-            person,
-            "Home"
-        )
+
+    # =========================
+    # STARTING RESOURCES
+    # =========================
+
+    mariam.add_item("food", 40)
+
+    gorak.add_item("meat", 10)
+
+    thorin.add_item("tools", 5)
+
+    # =========================
+    # CREATE LOCATIONS
+    # =========================
+
+    world.add_location(
+        Location("Home")
+    )
+
+    world.add_location(
+        Location("Market")
+    )
+
+    world.add_location(
+        Location("Tavern")
+    )
+
+    world.add_location(
+        Location("Workshop")
+    )
+
+    world.add_location(
+        Location("Farm")
+    )
+
+    world.add_location(
+        Location("Library")
+    )
+
+    world.add_location(
+        Location("Forest")
+    )
+
+    # =========================
+    # PLACE PEOPLE IN WORLD
+    # =========================
+
+    world.move_person(
+        mariam,
+        "Market"
+    )
+
+    world.move_person(
+        hassan,
+        "Market"
+    )
+
+    world.move_person(
+        gorak,
+        "Market"
+    )
+
+    world.move_person(
+        elira,
+        "Market"
+    )
+
+    world.move_person(
+        thorin,
+        "Market"
+    )
 
     # =========================
     # INITIAL WORLD STATE
@@ -187,14 +237,21 @@ def main():
         print(person)
 
     print()
-    print(f"Simulation year: {world.year}")
+    print(
+        f"Simulation date: "
+        f"Year {world.year}, "
+        f"Month {world.month}, "
+        f"Day {world.day}, "
+        f"{world.hour:02d}:00"
+    )
+
     print()
 
     # =========================
     # RUN SIMULATION
     # =========================
 
-    world.run_hours(48)
+    world.run_hours(24)
 
     # =========================
     # FINAL STATE
@@ -208,7 +265,8 @@ def main():
         f"Simulation date: "
         f"Year {world.year}, "
         f"Month {world.month}, "
-        f"Day {world.day}"
+        f"Day {world.day}, "
+        f"{world.hour:02d}:00"
     )
 
     print()
@@ -218,7 +276,9 @@ def main():
         print(
             f"{person.name}: "
             f"${person.money} | "
-            f"Inventory: {person.inventory}"
+            f"Inventory: {person.inventory} | "
+            f"Hunger: {person.hunger} | "
+            f"Energy: {person.energy}"
         )
 
 

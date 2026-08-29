@@ -1,11 +1,39 @@
 from systems.actions import generate_actions
 
 
+def need_score(person, action):
+
+    score = 0
+
+    # =================================
+    # HUNGER
+    # =================================
+
+    if action.action_type == "eat":
+
+        # Eating becomes increasingly important
+        # as hunger approaches dangerous levels.
+
+        score += (
+            person.hunger ** 1.7
+        )
+
+    # =================================
+    # SLEEP
+    # =================================
+
+    elif action.action_type == "sleep":
+
+        fatigue = 100 - person.energy
+
+        score += (
+            fatigue ** 1.7
+        )
+
+    return score
+
+
 def goal_score(person, action):
-    """
-    Determines how strongly the person's goals
-    motivate a particular action.
-    """
 
     score = 0
 
@@ -13,44 +41,89 @@ def goal_score(person, action):
 
         goal = goal.lower()
 
-        # Financial security / wealth
-        if "wealth" in goal or "financial" in goal:
+        # -----------------------------
+        # WEALTH
+        # -----------------------------
+
+        if (
+            "wealth" in goal
+            or "financial" in goal
+        ):
 
             if action.action_type == "work":
-                score += 30
 
-        # Reputation / respect
-        if "respected" in goal or "reputation" in goal:
-
-            if action.action_type == "work":
-                score += 15
-
-            elif action.action_type == "socialize":
                 score += 20
 
-        # Learning
-        if "learn" in goal or "knowledge" in goal:
+            elif action.action_type == "sell":
+
+                score += 25
+
+            elif action.action_type == "buy":
+
+                score -= 10
+
+        # -----------------------------
+        # RESPECT
+        # -----------------------------
+
+        if (
+            "respected" in goal
+            or "reputation" in goal
+        ):
+
+            if action.action_type == "socialize":
+
+                score += 15
+
+            elif action.action_type == "work":
+
+                score += 10
+
+        # -----------------------------
+        # KNOWLEDGE
+        # -----------------------------
+
+        if (
+            "learn" in goal
+            or "knowledge" in goal
+            or "scholar" in goal
+        ):
 
             if action.action_type == "practice":
+
                 score += 30
 
             elif action.action_type == "explore":
+
                 score += 25
 
-        # Family
-        if "family" in goal:
+        # -----------------------------
+        # CRAFT
+        # -----------------------------
 
-            if action.action_type == "work":
-                score += 15
-
-            elif action.action_type == "socialize":
-                score += 10
-
-        # Mastery
         if "master" in goal:
 
             if action.action_type == "practice":
+
                 score += 35
+
+            elif action.action_type == "work":
+
+                score += 20
+
+        # -----------------------------
+        # FAMILY
+        # -----------------------------
+
+        if "family" in goal:
+
+            if action.action_type == "work":
+
+                score += 10
+
+            if action.action_type == "socialize":
+
+                score += 10
 
     return score
 
@@ -59,78 +132,120 @@ def personality_score(person, action):
 
     score = 0
 
-    # ==============================
-    # SURVIVAL
-    # ==============================
-
-    if action.action_type == "eat":
-
-        score += person.hunger * 3
-
-    elif action.action_type == "sleep":
-
-        score += (100 - person.energy) * 3
-
-    # ==============================
+    # =================================
     # WORK
-    # ==============================
+    # =================================
 
-    elif action.action_type == "work":
-
-        score += person.conscientiousness
+    if action.action_type == "work":
 
         score += (
-            person.machiavellianism * 0.25
+            person.conscientiousness
+            * 0.6
         )
 
         score += (
-            person.narcissism * 0.15
+            person.machiavellianism
+            * 0.15
         )
 
-    # ==============================
+    # =================================
     # PRACTICE
-    # ==============================
+    # =================================
 
     elif action.action_type == "practice":
 
         score += (
-            person.conscientiousness * 0.7
+            person.conscientiousness
+            * 0.5
         )
 
         score += (
-            person.openness * 0.5
+            person.openness
+            * 0.4
         )
 
-    # ==============================
-    # SOCIALIZE
-    # ==============================
+    # =================================
+    # SOCIAL
+    # =================================
 
     elif action.action_type == "socialize":
 
         score += (
-            person.extraversion * 1.2
+            person.extraversion
+            * 0.7
         )
 
         score += (
-            person.agreeableness * 0.3
+            person.agreeableness
+            * 0.2
         )
 
-    # ==============================
-    # EXPLORE
-    # ==============================
+    # =================================
+    # EXPLORATION
+    # =================================
 
     elif action.action_type == "explore":
 
         score += (
-            person.openness * 1.2
+            person.openness
+            * 0.7
         )
 
         score += (
-            person.extraversion * 0.3
+            person.extraversion
+            * 0.2
         )
 
         score -= (
-            person.neuroticism * 0.5
+            person.neuroticism
+            * 0.3
+        )
+
+    return score
+
+
+def opportunity_score(person, action):
+
+    score = 0
+
+    # =================================
+    # BUYING
+    # =================================
+
+    if action.action_type == "buy":
+
+        if action.item == "food":
+
+            score += person.hunger * 1.5
+
+        elif action.item == "tools":
+
+            score += (
+                person.conscientiousness
+                * 0.2
+            )
+
+        score += (
+            person.extraversion
+            * 0.1
+        )
+
+    # =================================
+    # SELLING
+    # =================================
+
+    elif action.action_type == "sell":
+
+        score += 15
+
+        score += (
+            person.extraversion
+            * 0.3
+        )
+
+        score += (
+            person.machiavellianism
+            * 0.2
         )
 
     return score
@@ -138,17 +253,34 @@ def personality_score(person, action):
 
 def score_action(person, action):
 
-    personality = personality_score(
-        person,
-        action
-    )
+    return (
 
-    goals = goal_score(
-        person,
-        action
-    )
+        need_score(
+            person,
+            action
+        )
 
-    return personality + goals
+        +
+
+        goal_score(
+            person,
+            action
+        )
+
+        +
+
+        personality_score(
+            person,
+            action
+        )
+
+        +
+
+        opportunity_score(
+            person,
+            action
+        )
+    )
 
 
 def choose_action(person, world):

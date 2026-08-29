@@ -329,6 +329,180 @@ class Person:
             )
 
         # -------------------------
+        # BUY
+        # -------------------------
+
+        elif action_type == "buy":
+
+            seller = action.target
+            item = action.item
+            amount = action.amount
+            price = action.price
+
+            total_price = (
+                price * amount
+            )
+
+            if seller is None:
+                return (
+                    f"{self.name} "
+                    f"could not buy anything."
+                )
+
+            if self.money < total_price:
+
+                return (
+                    f"{self.name} "
+                    f"cannot afford "
+                    f"{item}."
+                )
+
+            if not seller.has_item(
+                item,
+                amount
+            ):
+
+                return (
+                    f"{seller.name} "
+                    f"does not have "
+                    f"{item}."
+                )
+
+            seller.remove_item(
+                item,
+                amount
+            )
+
+            self.add_item(
+                item,
+                amount
+            )
+
+            self.spend_money(
+                total_price
+            )
+
+            seller.earn_money(
+                total_price
+            )
+
+            self.remember(
+                f"Bought {amount} "
+                f"{item} from "
+                f"{seller.name}."
+            )
+
+            seller.remember(
+                f"Sold {amount} "
+                f"{item} to "
+                f"{self.name}."
+            )
+
+            self.change_relationship(
+                seller,
+                2
+            )
+
+            seller.change_relationship(
+                self,
+                2
+            )
+
+            return (
+                f"{self.name} bought "
+                f"{amount} {item} "
+                f"from {seller.name} "
+                f"for {total_price}."
+            )
+
+        # -------------------------
+        # SELL
+        # -------------------------
+
+        elif action_type == "sell":
+
+            buyer = action.target
+            item = action.item
+            amount = action.amount
+            price = action.price
+
+            total_price = (
+                price * amount
+            )
+
+            if buyer is None:
+                return (
+                    f"{self.name} "
+                    f"could not sell anything."
+                )
+
+            if not self.has_item(
+                item,
+                amount
+            ):
+
+                return (
+                    f"{self.name} "
+                    f"does not have "
+                    f"{item}."
+                )
+
+            if buyer.money < total_price:
+
+                return (
+                    f"{buyer.name} "
+                    f"cannot afford "
+                    f"{item}."
+                )
+
+            self.remove_item(
+                item,
+                amount
+            )
+
+            buyer.add_item(
+                item,
+                amount
+            )
+
+            self.earn_money(
+                total_price
+            )
+
+            buyer.spend_money(
+                total_price
+            )
+
+            self.remember(
+                f"Sold {amount} "
+                f"{item} to "
+                f"{buyer.name}."
+            )
+
+            buyer.remember(
+                f"Bought {amount} "
+                f"{item} from "
+                f"{self.name}."
+            )
+
+            self.change_relationship(
+                buyer,
+                2
+            )
+
+            buyer.change_relationship(
+                self,
+                2
+            )
+
+            return (
+                f"{self.name} sold "
+                f"{amount} {item} "
+                f"to {buyer.name} "
+                f"for {total_price}."
+            )
+
+        # -------------------------
         # SOCIALIZE
         # -------------------------
 

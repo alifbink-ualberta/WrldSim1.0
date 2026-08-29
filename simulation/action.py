@@ -11,15 +11,30 @@ class Action:
     target: Optional[object] = None
     reason: Optional[str] = None
 
+    item: Optional[str] = None
+    amount: int = 0
+    price: float = 0
+
     def __str__(self):
 
-        target_name = ""
+        target = ""
 
         if self.target:
-            target_name = f" → {self.target.name}"
+            target = (
+                f" → {self.target.name}"
+            )
+
+        item = ""
+
+        if self.item:
+            item = (
+                f" | {self.amount} "
+                f"{self.item}"
+            )
 
         return (
             f"{self.actor.name} "
             f"{self.action_type}"
-            f"{target_name}"
+            f"{target}"
+            f"{item}"
         )
