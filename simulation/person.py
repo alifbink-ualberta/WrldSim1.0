@@ -1,155 +1,241 @@
-from dataclasses import dataclass, field
-
-
-@dataclass
 class Person:
 
-    # -------------------------
-    # IDENTITY
-    # -------------------------
+    def __init__(
+        self,
+        name,
+        age,
+        species,
 
-    name: str
-    age: int
-    species: str
+        openness,
+        conscientiousness,
+        extraversion,
+        agreeableness,
+        neuroticism,
 
-    # -------------------------
-    # PERSONALITY
-    # -------------------------
+        machiavellianism,
+        narcissism,
+        psychopathy,
+        sadism,
 
-    openness: int
-    conscientiousness: int
-    extraversion: int
-    agreeableness: int
-    neuroticism: int
+        occupation,
+        money=0
+    ):
 
-    machiavellianism: int
-    narcissism: int
-    psychopathy: int
-    sadism: int
+        # =========================
+        # IDENTITY
+        # =========================
 
-    # -------------------------
-    # CIRCUMSTANCE
-    # -------------------------
+        self.name = name
+        self.age = age
+        self.species = species
+        self.occupation = occupation
 
-    occupation: str = "Unemployed"
-    money: int = 50
+        # =========================
+        # PERSONALITY
+        # =========================
 
-    health: int = 100
-    energy: int = 80
-    hunger: int = 20
+        self.openness = openness
+        self.conscientiousness = conscientiousness
+        self.extraversion = extraversion
+        self.agreeableness = agreeableness
+        self.neuroticism = neuroticism
 
-    location: str = "Home"
+        # Dark personality traits
+        self.machiavellianism = machiavellianism
+        self.narcissism = narcissism
+        self.psychopathy = psychopathy
+        self.sadism = sadism
 
-    # -------------------------
-    # PSYCHOLOGICAL STATE
-    # -------------------------
+        # =========================
+        # NEEDS
+        # =========================
 
-    goals: list = field(default_factory=list)
+        self.hunger = 0
+        self.energy = 100
 
-    # Things the person personally remembers
-    memories: list = field(default_factory=list)
+        # =========================
+        # ECONOMY
+        # =========================
 
-    # What this person thinks about other people
-    relationships: dict = field(default_factory=dict)
+        self.money = money
 
-    # What other people generally think about this person
-    reputation: dict = field(default_factory=dict)
+        self.inventory = {}
 
-    # -------------------------
-    # HISTORY
-    # -------------------------
+        # =========================
+        # PSYCHOLOGY
+        # =========================
 
-    life_events: list = field(default_factory=list)
+        self.goals = []
 
-    # -------------------------
-    # METHODS
-    # -------------------------
+        self.beliefs = []
 
-    def remember(self, memory):
+        # =========================
+        # SOCIAL
+        # =========================
 
-        self.memories.append(memory)
+        self.relationships = {}
 
-        if len(self.memories) > 100:
-            self.memories.pop(0)
+        self.memories = []
 
-    def add_life_event(self, event):
+        # =========================
+        # WORLD STATE
+        # =========================
 
-        self.life_events.append(event)
+        self.location = None
 
-    def relationship_with(self, person_name):
+        # =========================
+        # CURRENT ACTIVITY
+        # =========================
 
-        return self.relationships.get(
-            person_name,
-            50
+        self.current_activity = None
+
+    # ==================================================
+    # INVENTORY
+    # ==================================================
+
+    def add_item(self, item, amount=1):
+
+        if item not in self.inventory:
+            self.inventory[item] = 0
+
+        self.inventory[item] += amount
+
+    def remove_item(self, item, amount=1):
+
+        if item not in self.inventory:
+            return False
+
+        if self.inventory[item] < amount:
+            return False
+
+        self.inventory[item] -= amount
+
+        if self.inventory[item] <= 0:
+            del self.inventory[item]
+
+        return True
+
+    def has_item(self, item, amount=1):
+
+        return (
+            self.inventory.get(item, 0)
+            >= amount
         )
+
+    # ==================================================
+    # ECONOMY
+    # ==================================================
+
+    def earn_money(self, amount):
+
+        self.money += amount
+
+    def spend_money(self, amount):
+
+        if self.money < amount:
+            return False
+
+        self.money -= amount
+
+        return True
+
+    # ==================================================
+    # RELATIONSHIPS
+    # ==================================================
+
+    def get_relationship(self, other):
+
+        if other.name not in self.relationships:
+
+            self.relationships[other.name] = 0
+
+        return self.relationships[other.name]
 
     def change_relationship(
         self,
-        person_name,
+        other,
         amount
     ):
 
-        current = self.relationship_with(
-            person_name
-        )
+        current = self.get_relationship(other)
 
-        new_value = max(
-            0,
+        self.relationships[other.name] = max(
+            -100,
             min(
                 100,
                 current + amount
             )
         )
 
-        self.relationships[
-            person_name
-        ] = new_value
+    # ==================================================
+    # MEMORIES
+    # ==================================================
+
+    def remember(self, memory):
+
+        self.memories.append(memory)
+
+    # ==================================================
+    # ACTION EXECUTION
+    # ==================================================
 
     def perform_action(self, action):
 
-        if action.action_type == "eat":
+        action_type = action.action_type
 
-            self.hunger = max(
-                0,
-                self.hunger - 50
-            )
+        # -------------------------
+        # EAT
+        # -------------------------
 
-            self.energy = max(
-                0,
-                self.energy - 5
-            )
+        if action_type == "eat":
 
-            return f"{self.name} ate."
+            if self.has_item("food"):
 
-        elif action.action_type == "sleep":
+                self.remove_item(
+                    "food",
+                    1
+                )
+
+                self.hunger = max(
+                    0,
+                    self.hunger - 50
+                )
+
+                self.energy = max(
+                    0,
+                    self.energy - 2
+                )
+
+                return (
+                    f"{self.name} ate food."
+                )
+
+            else:
+
+                return (
+                    f"{self.name} has no food."
+                )
+
+        # -------------------------
+        # SLEEP
+        # -------------------------
+
+        elif action_type == "sleep":
 
             self.energy = min(
                 100,
                 self.energy + 60
             )
 
-            return f"{self.name} slept."
-
-        elif action.action_type == "work":
-
-            self.energy = max(
-                0,
-                self.energy - 15
-            )
-
-            self.hunger = min(
-                100,
-                self.hunger + 5
-            )
-
-            self.money += 5
-
             return (
-                f"{self.name} worked "
-                f"as a {self.occupation}."
+                f"{self.name} slept."
             )
 
-        elif action.action_type == "practice":
+        # -------------------------
+        # WORK
+        # -------------------------
+
+        elif action_type == "work":
 
             self.energy = max(
                 0,
@@ -158,7 +244,83 @@ class Person:
 
             self.hunger = min(
                 100,
-                self.hunger + 3
+                self.hunger + 4
+            )
+
+            # Occupation-specific production
+
+            if self.occupation == "Farmer":
+
+                self.add_item(
+                    "food",
+                    3
+                )
+
+                return (
+                    f"{self.name} worked the farm "
+                    f"and produced 3 food."
+                )
+
+            elif self.occupation == "Hunter":
+
+                self.add_item(
+                    "meat",
+                    2
+                )
+
+                return (
+                    f"{self.name} hunted "
+                    f"and produced 2 meat."
+                )
+
+            elif self.occupation == "Blacksmith":
+
+                self.add_item(
+                    "tools",
+                    1
+                )
+
+                return (
+                    f"{self.name} forged "
+                    f"1 tool."
+                )
+
+            elif self.occupation == "Merchant":
+
+                self.earn_money(5)
+
+                return (
+                    f"{self.name} conducted "
+                    f"business and earned 5 money."
+                )
+
+            elif self.occupation == "Scholar":
+
+                return (
+                    f"{self.name} studied "
+                    f"and gained knowledge."
+                )
+
+            else:
+
+                return (
+                    f"{self.name} worked."
+                )
+
+        # -------------------------
+        # PRACTICE
+        # -------------------------
+
+        elif action_type == "practice":
+
+            self.energy = max(
+                0,
+                self.energy - 8
+            )
+
+            self.hunger = min(
+                100,
+                self.hunger + 2
             )
 
             return (
@@ -166,22 +328,30 @@ class Person:
                 f"their skills."
             )
 
-        elif action.action_type == "socialize":
+        # -------------------------
+        # SOCIALIZE
+        # -------------------------
+
+        elif action_type == "socialize":
 
             self.energy = max(
                 0,
-                self.energy - 5
+                self.energy - 4
             )
 
             return (
                 f"{self.name} socialized."
             )
 
-        elif action.action_type == "explore":
+        # -------------------------
+        # EXPLORE
+        # -------------------------
+
+        elif action_type == "explore":
 
             self.energy = max(
                 0,
-                self.energy - 10
+                self.energy - 8
             )
 
             self.hunger = min(
@@ -195,4 +365,17 @@ class Person:
 
         return (
             f"{self.name} did nothing."
+        )
+
+    # ==================================================
+    # DEBUGGING
+    # ==================================================
+
+    def __str__(self):
+
+        return (
+            f"{self.name}, "
+            f"age {self.age}, "
+            f"{self.species}, "
+            f"{self.occupation}"
         )

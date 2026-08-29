@@ -152,6 +152,12 @@ def main():
         thorin
     ]
 
+    mariam.add_item("food", 10)
+    hassan.add_item("food", 8)
+    gorak.add_item("food", 8)
+    elira.add_item("food", 8)
+    thorin.add_item("food", 10)
+
     # =========================
     # ADD LOCATIONS TO WORLD
     # =========================
@@ -188,7 +194,7 @@ def main():
     # RUN SIMULATION
     # =========================
 
-    world.run_days(10)
+    world.run_hours(48)
 
     # =========================
     # FINAL STATE
@@ -211,9 +217,8 @@ def main():
 
         print(
             f"{person.name}: "
-            f"${person.money}, "
-            f"hunger={person.hunger}, "
-            f"energy={person.energy}"
+            f"${person.money} | "
+            f"Inventory: {person.inventory}"
         )
 
 

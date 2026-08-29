@@ -1,11 +1,17 @@
 def update_needs(person):
 
-    # Hunger increases every day
-    person.hunger += 5
+    # Hunger always increases slowly.
+    person.hunger = min(
+        100,
+        person.hunger + 1
+    )
 
-    # Energy decreases throughout the day
-    person.energy -= 10
+    # Energy only naturally declines
+    # while awake.
 
-    # Keep values within bounds
-    person.hunger = min(person.hunger, 100)
-    person.energy = max(person.energy, 0)
+    if person.current_activity is None:
+
+        person.energy = max(
+            0,
+            person.energy - 2
+        )

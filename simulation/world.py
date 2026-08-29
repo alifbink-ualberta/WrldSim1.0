@@ -1,159 +1,223 @@
-from simulation.person import Person
-from simulation.event import Event
-from systems.needs import update_needs
-from systems.decision_making import choose_action
-from systems.routines import get_routine_location
-
 class World:
 
     def __init__(self):
 
+        # =========================
+        # TIME
+        # =========================
+
         self.year = 1
         self.month = 1
         self.day = 1
+        self.hour = 0
+
+        # =========================
+        # WORLD ENTITIES
+        # =========================
 
         self.people = []
         self.events = []
-
         self.locations = {}
 
-    def add_location(self, location):
-
-        self.locations[location.name] = location
+    # =============================
+    # PEOPLE
+    # =============================
 
     def add_person(self, person):
 
         self.people.append(person)
+
+    # =============================
+    # LOCATIONS
+    # =============================
+
+    def add_location(self, location):
+
+        self.locations[location.name] = location
 
     def move_person(self, person, location_name):
 
         if location_name not in self.locations:
             return
 
-        # Remove them from their current location
+        # Remove from previous location
         for location in self.locations.values():
 
             location.leave(person)
 
-        # Move them
+        # Enter new location
         location = self.locations[location_name]
 
         location.enter(person)
 
-    def create_event(
-        self,
-        description,
-        participants=None,
-        location="",
-        importance=50
-    ):
+    # =============================
+    # TIME
+    # =============================
 
-        if participants is None:
-            participants = []
+    def advance_hour(self):
 
-        event = Event(
-            year=self.year,
-            month=self.month,
-            day=self.day,
-            description=description,
-            participants=participants,
-            location=location,
-            importance=importance
-        )
+        self.hour += 1
 
-        self.events.append(event)
+        if self.hour >= 24:
 
-        return event
+            self.hour = 0
+            self.day += 1
 
-    def check_encounters(self):
+            self.daily_update()
 
-        for location in self.locations.values():
-
-            if len(location.people) < 2:
-                continue
-
-            for i in range(
-                len(location.people)
-            ):
-
-                for j in range(
-                    i + 1,
-                    len(location.people)
-                ):
-
-                    person_a = location.people[i]
-                    person_b = location.people[j]
-
-                    self.create_event(
-                        description=(
-                            f"{person_a.name} "
-                            f"encountered "
-                            f"{person_b.name}."
-                        ),
-                        participants=[
-                            person_a.name,
-                            person_b.name
-                        ],
-                        location=location.name,
-                        importance=10
-                    )
-
-
-    def advance_day(self):
-
-        self.day += 1
-
+        # 30-day months for now
         if self.day > 30:
 
             self.day = 1
             self.month += 1
+
+            self.monthly_update()
 
         if self.month > 12:
 
             self.month = 1
             self.year += 1
 
-            for person in self.people:
-                person.age += 1
+            self.yearly_update()
 
-    def simulate_day(self):
+    # =============================
+    # HOURLY SIMULATION
+    # =============================
 
-        print(
-            f"\n--- Year {self.year}, "
-            f"Month {self.month}, "
-            f"Day {self.day} ---"
-        )
+    def simulate_hour(self):
+
+        from systems.needs import update_needs
+        from systems.decision_making import choose_action
+        from simulation.activity import Activity
+        from systems.actions import get_action_duration
 
         for person in self.people:
 
+            # -----------------------------
+            # UPDATE NEEDS
+            # -----------------------------
+
             update_needs(person)
+
+            # -----------------------------
+            # CONTINUE CURRENT ACTIVITY
+            # -----------------------------
+
+            if person.current_activity is not None:
+
+                activity = person.current_activity
+
+                print(
+                    f"[Y{self.year} "
+                    f"M{self.month} "
+                    f"D{self.day} "
+                    f"{self.hour:02d}:00] "
+                    f"{person.name} continues "
+                    f"{activity.action_type}."
+                )
+
+                activity.advance_hour()
+
+                # Activity finished
+                if activity.is_finished():
+
+                    print(
+                        f"    → {person.name} "
+                        f"finished "
+                        f"{activity.action_type}."
+                    )
+
+                    person.current_activity = None
+
+                continue
+
+            # -----------------------------
+            # MAKE A NEW DECISION
+            # -----------------------------
 
             action, score = choose_action(
                 person,
                 self
             )
 
+            duration = get_action_duration(
+                action.action_type
+            )
+
+            person.current_activity = Activity(
+                action=action,
+                remaining_hours=duration
+            )
+
+            # Execute the initial effects
             result = person.perform_action(
                 action
             )
 
             print(
+                f"[Y{self.year} "
+                f"M{self.month} "
+                f"D{self.day} "
+                f"{self.hour:02d}:00] "
                 f"{result} "
-                f"[score: {score:.1f}]"
+                f"(score={score:.1f}, "
+                f"duration={duration}h)"
             )
 
-        self.advance_day()
+        self.advance_hour()
 
-    def run(self, years):
+    # =============================
+    # DAILY UPDATE
+    # =============================
 
-        total_days = years * 360
+    def daily_update(self):
 
-        for _ in range(total_days):
+        pass
 
-            self.simulate_day()
+    # =============================
+    # MONTHLY UPDATE
+    # =============================
+
+    def monthly_update(self):
+
+        print(
+            f"\n=== MONTH {self.month}, "
+            f"YEAR {self.year} ===\n"
+        )
+
+    # =============================
+    # YEARLY UPDATE
+    # =============================
+
+    def yearly_update(self):
+
+        print(
+            f"\n######## YEAR "
+            f"{self.year} ########\n"
+        )
+
+        for person in self.people:
+
+            person.age += 1
+
+    # =============================
+    # RUN SIMULATION
+    # =============================
+
+    def run_hours(self, hours):
+
+        for _ in range(hours):
+
+            self.simulate_hour()
 
     def run_days(self, days):
 
-        for _ in range(days):
+        self.run_hours(
+            days * 24
+        )
 
-            self.simulate_day()
+    def run_years(self, years):
+
+        self.run_hours(
+            years * 365 * 24
+        )

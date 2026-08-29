@@ -1,23 +1,43 @@
 from simulation.action import Action
 
 
+def get_action_duration(action_type):
+
+    durations = {
+
+        "eat": 1,
+        "sleep": 8,
+        "work": 4,
+        "practice": 2,
+        "socialize": 2,
+        "explore": 4
+    }
+
+    return durations.get(
+        action_type,
+        1
+    )
+
+
 def generate_actions(person, world):
 
     actions = []
 
-    # --------------------------------
-    # BASIC SURVIVAL
-    # --------------------------------
+    # =============================
+    # SURVIVAL
+    # =============================
 
     if person.hunger >= 40:
 
-        actions.append(
-            Action(
-                actor=person,
-                action_type="eat",
-                reason="hunger"
+        if person.has_item("food"):
+
+            actions.append(
+                Action(
+                    actor=person,
+                    action_type="eat",
+                    reason="hunger"
+                )
             )
-        )
 
     if person.energy <= 30:
 
@@ -29,9 +49,9 @@ def generate_actions(person, world):
             )
         )
 
-    # --------------------------------
+    # =============================
     # OCCUPATION
-    # --------------------------------
+    # =============================
 
     actions.append(
         Action(
@@ -41,9 +61,9 @@ def generate_actions(person, world):
         )
     )
 
-    # --------------------------------
+    # =============================
     # PERSONAL DEVELOPMENT
-    # --------------------------------
+    # =============================
 
     actions.append(
         Action(
@@ -53,9 +73,9 @@ def generate_actions(person, world):
         )
     )
 
-    # --------------------------------
+    # =============================
     # SOCIAL
-    # --------------------------------
+    # =============================
 
     actions.append(
         Action(
@@ -65,9 +85,9 @@ def generate_actions(person, world):
         )
     )
 
-    # --------------------------------
+    # =============================
     # EXPLORATION
-    # --------------------------------
+    # =============================
 
     actions.append(
         Action(

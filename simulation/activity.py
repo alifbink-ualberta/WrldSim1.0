@@ -1,0 +1,32 @@
+from dataclasses import dataclass
+from simulation.action import Action
+
+
+@dataclass
+class Activity:
+
+    action: Action
+    remaining_hours: int
+
+    @property
+    def actor(self):
+        return self.action.actor
+
+    @property
+    def action_type(self):
+        return self.action.action_type
+
+    def advance_hour(self):
+
+        self.remaining_hours -= 1
+
+    def is_finished(self):
+
+        return self.remaining_hours <= 0
+
+    def __str__(self):
+
+        return (
+            f"{self.actor.name} is "
+            f"{self.action_type}"
+        )
