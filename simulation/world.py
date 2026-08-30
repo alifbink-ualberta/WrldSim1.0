@@ -1,78 +1,71 @@
+# simulation/world.py
+
+from simulation.activity import Activity
+
+from systems.behavior_registry import BehaviorRegistry
+from systems.decision_making import DecisionSystem
+from systems.action_resolver import ActionResolver
+from systems.actions import get_action_duration
+from systems.needs import update_needs
+
+
 class World:
 
-    def __init__(
-        self,
-        decision_system=None,
-        behavior_registry=None,
-        action_resolver=None
-    ):
+    def __init__(self):
 
-        # =====================================
+        # ==========================================
         # TIME
-        # =====================================
+        # ==========================================
 
         self.year = 1
         self.month = 1
         self.day = 1
+
         self.hour = 0
         self.minute = 0
 
-        # =====================================
-        # WORLD ENTITIES
-        # =====================================
+        # One simulation minute = one simulation tick.
+        self.current_time_minutes = 0
+
+        # ==========================================
+        # ENTITIES
+        # ==========================================
 
         self.people = []
         self.events = []
         self.locations = {}
 
-        # =====================================
-        # SYSTEMS
-        # =====================================
+        # ==========================================
+        # SIMULATION SYSTEMS
+        # ==========================================
 
-        from systems.decision_making import (
-            DecisionSystem
-        )
+        self.behavior_registry = BehaviorRegistry()
 
-        from systems.behaviors import (
-            create_default_registry
-        )
+        self.decision_system = DecisionSystem()
 
-        from systems.action_resolver import (
-            ActionResolver
-        )
+        self.action_resolver = ActionResolver()
 
-        self.decision_system = (
-            decision_system
-            or DecisionSystem()
-        )
+        # ==========================================
+        # SIMULATION STATE
+        # ==========================================
 
-        self.behavior_registry = (
-            behavior_registry
-            or create_default_registry()
-        )
+        self.running = True
 
-        self.action_resolver = (
-            action_resolver
-            or ActionResolver()
-        )
-
-    # =====================================
+    # ==============================================
     # PEOPLE
-    # =====================================
+    # ==============================================
 
     def add_person(self, person):
 
         self.people.append(person)
 
-    # =====================================
+    # ==============================================
     # LOCATIONS
-    # =====================================
+    # ==============================================
 
     def add_location(self, location):
 
-        self.locations[
-            location.name
-        ] = location
+        self.locations[location.name] = location
 
     def move_person(
         self,
@@ -81,217 +74,266 @@ class World:
     ):
 
         if location_name not in self.locations:
-            return
+            return False
+
+        # Remove from previous location.
 
         for location in self.locations.values():
 
             location.leave(person)
 
-        location = self.locations[
-            location_name
-        ]
+        # Add to new location.
+
+        location = self.locations[location_name]
 
         location.enter(person)
 
-    # =====================================
+        return True
+
+    # ==============================================
     # TIME
-    # =====================================
+    # ==============================================
 
     def advance_minute(self):
 
         self.minute += 1
 
+        self.current_time_minutes += 1
+
+        # ------------------------------------------
+        # HOUR
+        # ------------------------------------------
+
         if self.minute >= 60:
 
             self.minute = 0
+
             self.hour += 1
+
+        # ------------------------------------------
+        # DAY
+        # ------------------------------------------
 
         if self.hour >= 24:
 
             self.hour = 0
+
             self.day += 1
 
             self.daily_update()
 
+        # ------------------------------------------
+        # MONTH
+        # ------------------------------------------
+
         if self.day > 30:
 
             self.day = 1
+
             self.month += 1
 
             self.monthly_update()
 
+        # ------------------------------------------
+        # YEAR
+        # ------------------------------------------
+
         if self.month > 12:
 
             self.month = 1
+
             self.year += 1
 
             self.yearly_update()
 
-    # =====================================
-    # SIMULATION
-    # =====================================
+    # ==============================================
+    # TIME DISPLAY
+    # ==============================================
+
+    def timestamp(self):
+
+        return (
+            f"[Y{self.year} "
+            f"M{self.month} "
+            f"D{self.day} "
+            f"{self.hour:02d}:"
+            f"{self.minute:02d}]"
+        )
+
+    # ==============================================
+    # START ACTIVITY
+    # ==============================================
+
+    def start_activity(
+        self,
+        person,
+        action,
+        score
+    ):
+
+        duration = get_action_duration(
+            action.action_type
+        )
+
+        person.current_activity = Activity(
+            action=action,
+            remaining_minutes=duration
+        )
+
+        print(
+            f"{self.timestamp()} "
+            f"{person.name} begins "
+            f"{action.action_type} "
+            f"(score={score:.1f}, "
+            f"duration={duration}m)"
+        )
+
+    # ==============================================
+    # CHOOSE ACTION
+    # ==============================================
+
+    def choose_action(self, person):
+
+        return self.decision_system.choose_action(
+            person,
+            self,
+            self.behavior_registry
+        )
+
+    # ==============================================
+    # UPDATE ACTIVITY
+    # ==============================================
+
+    def update_activity(self, person):
+
+        activity = person.current_activity
+
+        if activity is None:
+            return
+
+        activity.advance(1)
+
+        if activity.is_finished():
+
+            self.finish_activity(person)
+
+    # ==============================================
+    # FINISH ACTIVITY
+    # ==============================================
+
+    def finish_activity(self, person):
+
+        activity = person.current_activity
+
+        if activity is None:
+            return
+
+        action = activity.action
+
+        outcome, result, message = (
+            self.action_resolver.resolve(
+                person,
+                action,
+                self
+            )
+        )
+
+        print(
+            f"    → {message}"
+        )
+
+        if outcome is not None:
+
+            print(
+                f"       Success chance: "
+                f"{outcome.chance:.1f}%"
+            )
+
+        person.current_activity = None
+
+    # ==============================================
+    # SIMULATE ONE MINUTE
+    # ==============================================
 
     def simulate_minute(self):
 
-        from systems.needs import update_needs
+        if not self.running:
+            return
 
-        from simulation.activity import (
-            Activity
-        )
+        # ------------------------------------------
+        # UPDATE NEEDS
+        # ------------------------------------------
 
         for person in self.people:
 
-            # =================================
-            # NEEDS
-            # =================================
-
             update_needs(
                 person,
-                1
+                minutes=1
             )
 
-            # =================================
-            # CURRENT ACTIVITY
-            # =================================
+        # ------------------------------------------
+        # PROCESS PEOPLE
+        # ------------------------------------------
+
+        for person in self.people:
+
+            # Existing activity takes priority.
 
             if person.current_activity is not None:
 
-                activity = (
-                    person.current_activity
-                )
-
-                activity.advance(1)
-
-                if activity.is_finished():
-
-                    self.finish_activity(
-                        person
-                    )
+                self.update_activity(person)
 
                 continue
 
-            # =================================
+            # --------------------------------------
             # DECISION
-            # =================================
+            # --------------------------------------
 
-            action, score = (
-                self.decision_system.choose_action(
-                    person,
-                    self,
-                    self.behavior_registry
-                )
+            action, score = self.choose_action(
+                person
             )
 
             if action is None:
                 continue
 
-            # =================================
+            # --------------------------------------
             # START ACTIVITY
-            # =================================
+            # --------------------------------------
 
-            from systems.actions import (
-                get_action_duration
-            )
-
-            duration = (
-                get_action_duration(
-                    action.action_type
-                )
-            )
-
-            person.current_activity = (
-                Activity(
-                    action=action,
-                    remaining_minutes=duration
-                )
-            )
-
-            # =================================
-            # LOG
-            # =================================
-
-            print(
-                f"[Y{self.year} "
-                f"M{self.month} "
-                f"D{self.day} "
-                f"{self.hour:02d}:"
-                f"{self.minute:02d}] "
-                f"{person.name} begins "
-                f"{action.action_type} "
-                f"(score={score:.1f}, "
-                f"duration={duration}m)"
-            )
-
-    # =====================================
-    # ACTIVITY COMPLETION
-    # =====================================
-
-    def finish_activity(self, person):
-
-        activity = (
-            person.current_activity
-        )
-
-        action = activity.action
-
-        outcome = (
-            self.action_resolver.resolve(
+            self.start_activity(
+                person,
                 action,
-                self
-            )
-        )
-
-        # =================================
-        # APPLY RESULT
-        # =================================
-
-        if outcome.success:
-
-            result = person.perform_action(
-                action,
-                self
+                score
             )
 
-            print(
-                f"    → {result}"
-            )
+        # ------------------------------------------
+        # ADVANCE WORLD CLOCK
+        # ------------------------------------------
 
-        else:
+        self.advance_minute()
 
-            print(
-                f"    → {outcome.description}"
-            )
-
-        print(
-            f"       Success chance: "
-            f"{outcome.probability:.1f}%"
-        )
-
-        person.current_activity = None
-
-    # =====================================
-    # DAILY
-    # =====================================
+    # ==============================================
+    # DAILY UPDATE
+    # ==============================================
 
     def daily_update(self):
 
         pass
 
-    # =====================================
-    # MONTHLY
-    # =====================================
+    # ==============================================
+    # MONTHLY UPDATE
+    # ==============================================
 
     def monthly_update(self):
 
         print(
-            f"\n=== MONTH "
-            f"{self.month}, "
+            f"\n=== MONTH {self.month}, "
             f"YEAR {self.year} ===\n"
         )
 
-    # =====================================
-    # YEARLY
-    # =====================================
+    # ==============================================
+    # YEARLY UPDATE
+    # ==============================================
 
     def yearly_update(self):
 
@@ -304,17 +346,22 @@ class World:
 
             person.age += 1
 
-    # =====================================
-    # RUN
-    # =====================================
+    # ==============================================
+    # RUN MINUTES
+    # ==============================================
 
     def run_minutes(self, minutes):
 
         for _ in range(minutes):
 
+            if not self.running:
+                break
+
             self.simulate_minute()
 
-            self.advance_minute()
+    # ==============================================
+    # RUN HOURS
+    # ==============================================
 
     def run_hours(self, hours):
 
@@ -322,14 +369,34 @@ class World:
             hours * 60
         )
 
+    # ==============================================
+    # RUN DAYS
+    # ==============================================
+
     def run_days(self, days):
 
         self.run_minutes(
             days * 24 * 60
         )
 
+    # ==============================================
+    # RUN YEARS
+    # ==============================================
+
     def run_years(self, years):
 
         self.run_minutes(
             years * 365 * 24 * 60
         )
+
+    # ==============================================
+    # STOP / START
+    # ==============================================
+
+    def stop(self):
+
+        self.running = False
+
+    def start(self):
+
+        self.running = True

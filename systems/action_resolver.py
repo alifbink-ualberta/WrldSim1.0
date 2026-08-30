@@ -1,179 +1,259 @@
-import random
+# systems/action_resolver.py
 
+from systems.outcome import (
+    OutcomeSystem,
+    BaseChance,
+    SkillModifier,
+    PersonalityModifier,
+    EnergyModifier,
+    FamiliarityModifier
+)
 
-class ActionOutcome:
-
-    def __init__(
-        self,
-        success,
-        probability,
-        description,
-        quality=1.0
-    ):
-
-        self.success = success
-        self.probability = probability
-        self.description = description
-        self.quality = quality
-
-    def __str__(self):
-
-        return (
-            f"{self.description} "
-            f"[success probability="
-            f"{self.probability:.1f}%]"
-        )
+from systems.action_handlers import (
+    EatHandler,
+    SleepHandler,
+    WorkHandler,
+    PracticeHandler,
+    ExploreHandler,
+    SocializeHandler,
+    BuyHandler,
+    SellHandler
+)
 
 
 class ActionResolver:
 
+    def __init__(self):
+
+        self.handlers = {}
+        self.outcomes = {}
+
+        self.register_defaults()
+
+    # ==========================================
+    # REGISTRATION
+    # ==========================================
+
+    def register_handler(
+        self,
+        action_type,
+        handler
+    ):
+
+        self.handlers[action_type] = handler
+
+    def register_outcome_system(
+        self,
+        action_type,
+        outcome_system
+    ):
+
+        self.outcomes[action_type] = (
+            outcome_system
+        )
+
+    # ==========================================
+    # DEFAULT ACTIONS
+    # ==========================================
+
+    def register_defaults(self):
+
+        self.register_handler(
+            "eat",
+            EatHandler()
+        )
+
+        self.register_handler(
+            "sleep",
+            SleepHandler()
+        )
+
+        self.register_handler(
+            "work",
+            WorkHandler()
+        )
+
+        self.register_handler(
+            "practice",
+            PracticeHandler()
+        )
+
+        self.register_handler(
+            "explore",
+            ExploreHandler()
+        )
+
+        self.register_handler(
+            "socialize",
+            SocializeHandler()
+        )
+
+        self.register_handler(
+            "buy",
+            BuyHandler()
+        )
+
+        self.register_handler(
+            "sell",
+            SellHandler()
+        )
+
+        self.register_social_outcome()
+
+        self.register_basic_outcome(
+            "eat"
+        )
+
+        self.register_basic_outcome(
+            "sleep"
+        )
+
+        self.register_basic_outcome(
+            "work"
+        )
+
+        self.register_basic_outcome(
+            "practice"
+        )
+
+        self.register_basic_outcome(
+            "explore"
+        )
+
+        self.register_basic_outcome(
+            "buy"
+        )
+
+        self.register_basic_outcome(
+            "sell"
+        )
+
+    # ==========================================
+    # OUTCOME CONFIGURATION
+    # ==========================================
+
+    def register_basic_outcome(
+        self,
+        action_type
+    ):
+
+        system = OutcomeSystem()
+
+        system.add_modifier(
+            BaseChance(95)
+        )
+
+        system.add_modifier(
+            EnergyModifier()
+        )
+
+        self.register_outcome_system(
+            action_type,
+            system
+        )
+
+    def register_social_outcome(self):
+
+        system = OutcomeSystem()
+
+        system.add_modifier(
+            BaseChance(50)
+        )
+
+        system.add_modifier(
+            SkillModifier(
+                "conversation",
+                0.6
+            )
+        )
+
+        system.add_modifier(
+            PersonalityModifier(
+                "extraversion",
+                0.20
+            )
+        )
+
+        system.add_modifier(
+            PersonalityModifier(
+                "agreeableness",
+                0.10
+            )
+        )
+
+        system.add_modifier(
+            FamiliarityModifier()
+        )
+
+        system.add_modifier(
+            EnergyModifier()
+        )
+
+        self.register_outcome_system(
+            "socialize",
+            system
+        )
+
+    # ==========================================
+    # RESOLUTION
+    # ==========================================
+
     def resolve(
         self,
+        person,
         action,
         world
     ):
 
-        probability = (
-            self.calculate_probability(
-                action,
-                world
-            )
+        handler = self.handlers.get(
+            action.action_type
         )
 
-        roll = random.uniform(
-            0,
-            100
-        )
+        if handler is None:
 
-        success = roll <= probability
-
-        if success:
-
-            description = (
-                f"{action.actor.name} "
-                f"successfully completed "
+            return (
+                None,
+                None,
+                f"{person.name} "
+                f"does not know how to "
                 f"{action.action_type}."
             )
 
-            return ActionOutcome(
-                success=True,
-                probability=probability,
-                description=description,
-                quality=1.0
+        outcome_system = (
+            self.outcomes.get(
+                action.action_type
             )
-
-        description = (
-            f"{action.actor.name} "
-            f"failed to successfully "
-            f"complete "
-            f"{action.action_type}."
         )
 
-        return ActionOutcome(
-            success=False,
-            probability=probability,
-            description=description,
-            quality=0.0
+        if outcome_system is None:
+
+            outcome_system = OutcomeSystem()
+
+        outcome = outcome_system.resolve(
+            person,
+            action,
+            world
         )
 
-    # ==========================================
-    # PROBABILITY
-    # ==========================================
+        if not outcome.success:
 
-    def calculate_probability(
-        self,
-        action,
-        world
-    ):
-
-        person = action.actor
-        action_type = action.action_type
-
-        probability = 70.0
-
-        # --------------------------------------
-        # SOCIALIZATION
-        # --------------------------------------
-
-        if action_type == "socialize":
-
-            probability += (
-                person.extraversion - 50
-            ) * 0.35
-
-            probability += (
-                person.agreeableness - 50
-            ) * 0.20
-
-            probability -= (
-                person.neuroticism - 50
-            ) * 0.20
-
-        # --------------------------------------
-        # WORK
-        # --------------------------------------
-
-        elif action_type == "work":
-
-            probability += (
-                person.conscientiousness - 50
-            ) * 0.25
-
-        # --------------------------------------
-        # PRACTICE
-        # --------------------------------------
-
-        elif action_type == "practice":
-
-            probability += (
-                person.conscientiousness - 50
-            ) * 0.25
-
-            probability += (
-                person.openness - 50
-            ) * 0.15
-
-        # --------------------------------------
-        # EXPLORATION
-        # --------------------------------------
-
-        elif action_type == "explore":
-
-            probability += (
-                person.openness - 50
-            ) * 0.25
-
-            probability -= (
-                person.neuroticism - 50
-            ) * 0.20
-
-        # --------------------------------------
-        # BASIC SURVIVAL
-        # --------------------------------------
-
-        elif action_type in (
-            "eat",
-            "sleep"
-        ):
-
-            probability = 95
-
-        # --------------------------------------
-        # ENERGY
-        # --------------------------------------
-
-        if person.energy < 20:
-
-            probability -= 10
-
-        # --------------------------------------
-        # CLAMP
-        # --------------------------------------
-
-        return max(
-            5,
-            min(
-                95,
-                probability
+            return (
+                outcome,
+                None,
+                f"{person.name} failed to "
+                f"successfully complete "
+                f"{action.action_type}."
             )
+
+        result = handler.execute(
+            person,
+            action,
+            world,
+            outcome
+        )
+
+        return (
+            outcome,
+            result,
+            result
         )
