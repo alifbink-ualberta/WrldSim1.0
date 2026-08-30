@@ -1,5 +1,3 @@
-# simulation/person.py
-
 class Person:
 
     def __init__(
@@ -36,28 +34,16 @@ class Person:
         # PERSONALITY
         # =========================
 
-        # Big Five
         self.openness = openness
         self.conscientiousness = conscientiousness
         self.extraversion = extraversion
         self.agreeableness = agreeableness
         self.neuroticism = neuroticism
 
-        # Dark personality traits
         self.machiavellianism = machiavellianism
         self.narcissism = narcissism
         self.psychopathy = psychopathy
         self.sadism = sadism
-
-        # =========================
-        # MOTIVATIONS
-        # =========================
-
-        from simulation.motivation import MotivationSystem
-
-        self.motivations = (
-            MotivationSystem.generate(self)
-        )
 
         # =========================
         # NEEDS
@@ -77,11 +63,9 @@ class Person:
         # PSYCHOLOGY
         # =========================
 
-        # Goals will eventually be generated
-        # from motivations + circumstances.
         self.goals = []
-
         self.beliefs = []
+        self.motivations = {}
 
         # =========================
         # SOCIAL
@@ -89,8 +73,10 @@ class Person:
 
         self.relationships = {}
 
-        # Events and experiences this person
-        # personally remembers.
+        # =========================
+        # MEMORY
+        # =========================
+
         self.memories = []
 
         # =========================
@@ -152,6 +138,7 @@ class Person:
             return False
 
         self.money -= amount
+
         return True
 
     # ==================================================
@@ -190,17 +177,6 @@ class Person:
         amount
     ):
 
-        """
-        Compatibility helper for the current
-        trade system.
-
-        This currently changes trust and affection
-        symmetrically.
-
-        The relationship system will later become
-        asymmetric and layered.
-        """
-
         if other == self:
             return
 
@@ -208,7 +184,6 @@ class Person:
             other
         )
 
-        # Person A's feelings toward B
         relationship.trust_a_to_b = max(
             -100,
             min(
@@ -225,7 +200,6 @@ class Person:
             )
         )
 
-        # Person B's feelings toward A
         relationship.trust_b_to_a = max(
             -100,
             min(
@@ -243,14 +217,12 @@ class Person:
         )
 
     # ==================================================
-    # MEMORIES
+    # MEMORY
     # ==================================================
 
     def remember(self, memory):
 
-        self.memories.append(
-            memory
-        )
+        self.memories.append(memory)
 
     # ==================================================
     # ACTION EXECUTION
@@ -264,9 +236,9 @@ class Person:
 
         action_type = action.action_type
 
-        # -------------------------
+        # ==================================================
         # EAT
-        # -------------------------
+        # ==================================================
 
         if action_type == "eat":
 
@@ -293,6 +265,7 @@ class Person:
                     "month": world.month,
                     "day": world.day,
                     "hour": world.hour,
+                    "minute": world.minute,
                     "description": "Ate food."
                 })
 
@@ -300,7 +273,7 @@ class Person:
                     f"{self.name} ate food."
                 )
 
-            elif self.has_item("meat"):
+            if self.has_item("meat"):
 
                 self.remove_item(
                     "meat",
@@ -323,6 +296,7 @@ class Person:
                     "month": world.month,
                     "day": world.day,
                     "hour": world.hour,
+                    "minute": world.minute,
                     "description": "Ate meat."
                 })
 
@@ -330,15 +304,14 @@ class Person:
                     f"{self.name} ate meat."
                 )
 
-            else:
+            return (
+                f"{self.name} had nothing "
+                f"to eat."
+            )
 
-                return (
-                    f"{self.name} has no food."
-                )
-
-        # -------------------------
+        # ==================================================
         # SLEEP
-        # -------------------------
+        # ==================================================
 
         elif action_type == "sleep":
 
@@ -353,6 +326,7 @@ class Person:
                 "month": world.month,
                 "day": world.day,
                 "hour": world.hour,
+                "minute": world.minute,
                 "description": "Slept."
             })
 
@@ -360,9 +334,9 @@ class Person:
                 f"{self.name} slept."
             )
 
-        # -------------------------
+        # ==================================================
         # WORK
-        # -------------------------
+        # ==================================================
 
         elif action_type == "work":
 
@@ -383,9 +357,10 @@ class Person:
                     3
                 )
 
-                return (
-                    f"{self.name} worked the farm "
-                    f"and produced 3 food."
+                description = (
+                    f"{self.name} worked "
+                    f"the farm and produced "
+                    f"3 food."
                 )
 
             elif self.occupation == "Hunter":
@@ -395,9 +370,10 @@ class Person:
                     2
                 )
 
-                return (
+                description = (
                     f"{self.name} hunted "
-                    f"and produced 2 meat."
+                    f"and produced "
+                    f"2 meat."
                 )
 
             elif self.occupation == "Blacksmith":
@@ -407,7 +383,7 @@ class Person:
                     1
                 )
 
-                return (
+                description = (
                     f"{self.name} forged "
                     f"1 tool."
                 )
@@ -416,27 +392,40 @@ class Person:
 
                 self.earn_money(5)
 
-                return (
+                description = (
                     f"{self.name} conducted "
-                    f"business and earned 5 money."
+                    f"business and earned "
+                    f"5 money."
                 )
 
             elif self.occupation == "Scholar":
 
-                return (
+                description = (
                     f"{self.name} studied "
                     f"and gained knowledge."
                 )
 
             else:
 
-                return (
+                description = (
                     f"{self.name} worked."
                 )
 
-        # -------------------------
+            self.remember({
+                "type": "work",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "minute": world.minute,
+                "description": description
+            })
+
+            return description
+
+        # ==================================================
         # PRACTICE
-        # -------------------------
+        # ==================================================
 
         elif action_type == "practice":
 
@@ -450,14 +439,90 @@ class Person:
                 self.hunger + 2
             )
 
+            self.remember({
+                "type": "practice",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "minute": world.minute,
+                "description": (
+                    f"{self.name} practiced "
+                    f"their skills."
+                )
+            })
+
             return (
                 f"{self.name} practiced "
                 f"their skills."
             )
 
-        # -------------------------
+        # ==================================================
+        # SOCIALIZE
+        # ==================================================
+
+        elif action_type == "socialize":
+
+            from systems.social import (
+                social_interaction
+            )
+
+            target = action.target
+
+            if target is None:
+
+                return (
+                    f"{self.name} had nobody "
+                    f"to socialize with."
+                )
+
+            self.energy = max(
+                0,
+                self.energy - 4
+            )
+
+            return social_interaction(
+                self,
+                target,
+                world
+            )
+
+        # ==================================================
+        # EXPLORE
+        # ==================================================
+
+        elif action_type == "explore":
+
+            self.energy = max(
+                0,
+                self.energy - 8
+            )
+
+            self.hunger = min(
+                100,
+                self.hunger + 3
+            )
+
+            self.remember({
+                "type": "exploration",
+                "year": world.year,
+                "month": world.month,
+                "day": world.day,
+                "hour": world.hour,
+                "minute": world.minute,
+                "description": (
+                    f"{self.name} explored "
+                    f"the surrounding area."
+                )
+            })
+
+            return (
+                f"{self.name} explored."
+            )
+
+        # ==================================================
         # BUY
-        # -------------------------
+        # ==================================================
 
         elif action_type == "buy":
 
@@ -466,23 +531,22 @@ class Person:
             amount = action.amount
             price = action.price
 
+            if seller is None:
+
+                return (
+                    f"{self.name} could not "
+                    f"find a seller."
+                )
+
             total_price = (
                 price * amount
             )
 
-            if seller is None:
-
-                return (
-                    f"{self.name} "
-                    f"could not buy anything."
-                )
-
             if self.money < total_price:
 
                 return (
-                    f"{self.name} "
-                    f"cannot afford "
-                    f"{item}."
+                    f"{self.name} cannot "
+                    f"afford {item}."
                 )
 
             if not seller.has_item(
@@ -491,9 +555,8 @@ class Person:
             ):
 
                 return (
-                    f"{seller.name} "
-                    f"does not have "
-                    f"{item}."
+                    f"{seller.name} does not "
+                    f"have {item}."
                 )
 
             seller.remove_item(
@@ -520,6 +583,7 @@ class Person:
                 "month": world.month,
                 "day": world.day,
                 "hour": world.hour,
+                "minute": world.minute,
                 "other": seller.name,
                 "description": (
                     f"Bought {amount} "
@@ -534,6 +598,7 @@ class Person:
                 "month": world.month,
                 "day": world.day,
                 "hour": world.hour,
+                "minute": world.minute,
                 "other": self.name,
                 "description": (
                     f"Sold {amount} "
@@ -554,9 +619,9 @@ class Person:
                 f"for {total_price}."
             )
 
-        # -------------------------
+        # ==================================================
         # SELL
-        # -------------------------
+        # ==================================================
 
         elif action_type == "sell":
 
@@ -565,16 +630,16 @@ class Person:
             amount = action.amount
             price = action.price
 
-            total_price = (
-                price * amount
-            )
-
             if buyer is None:
 
                 return (
-                    f"{self.name} "
-                    f"could not sell anything."
+                    f"{self.name} could not "
+                    f"find a buyer."
                 )
+
+            total_price = (
+                price * amount
+            )
 
             if not self.has_item(
                 item,
@@ -582,17 +647,15 @@ class Person:
             ):
 
                 return (
-                    f"{self.name} "
-                    f"does not have "
-                    f"{item}."
+                    f"{self.name} does not "
+                    f"have {item}."
                 )
 
             if buyer.money < total_price:
 
                 return (
-                    f"{buyer.name} "
-                    f"cannot afford "
-                    f"{item}."
+                    f"{buyer.name} cannot "
+                    f"afford {item}."
                 )
 
             self.remove_item(
@@ -619,6 +682,7 @@ class Person:
                 "month": world.month,
                 "day": world.day,
                 "hour": world.hour,
+                "minute": world.minute,
                 "other": buyer.name,
                 "description": (
                     f"Sold {amount} "
@@ -633,6 +697,7 @@ class Person:
                 "month": world.month,
                 "day": world.day,
                 "hour": world.hour,
+                "minute": world.minute,
                 "other": self.name,
                 "description": (
                     f"Bought {amount} "
@@ -653,64 +718,9 @@ class Person:
                 f"for {total_price}."
             )
 
-        # -------------------------
-        # SOCIALIZE
-        # -------------------------
-
-        elif action_type == "socialize":
-
-            from systems.social import (
-                choose_social_target,
-                social_interaction
-            )
-
-            self.energy = max(
-                0,
-                self.energy - 4
-            )
-
-            target = choose_social_target(
-                self,
-                world
-            )
-
-            if target is None:
-
-                return (
-                    f"{self.name} wanted "
-                    f"to socialize, but "
-                    f"nobody was available."
-                )
-
-            return social_interaction(
-                self,
-                target,
-                world
-            )
-
-        # -------------------------
-        # EXPLORE
-        # -------------------------
-
-        elif action_type == "explore":
-
-            self.energy = max(
-                0,
-                self.energy - 8
-            )
-
-            self.hunger = min(
-                100,
-                self.hunger + 3
-            )
-
-            return (
-                f"{self.name} explored."
-            )
-
-        # -------------------------
+        # ==================================================
         # UNKNOWN ACTION
-        # -------------------------
+        # ==================================================
 
         return (
             f"{self.name} did nothing."
@@ -728,4 +738,3 @@ class Person:
             f"{self.species}, "
             f"{self.occupation}"
         )
-

@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from simulation.action import Action
 
 
 @dataclass
 class Activity:
 
-    action: Action
-    remaining_hours: int
+    action: object
+    remaining_minutes: int
 
     @property
     def actor(self):
@@ -16,16 +15,13 @@ class Activity:
     def action_type(self):
         return self.action.action_type
 
-    def advance_hour(self):
-
-        self.remaining_hours -= 1
+    def advance(self, minutes):
+        self.remaining_minutes -= minutes
 
     def is_finished(self):
-
-        return self.remaining_hours <= 0
+        return self.remaining_minutes <= 0
 
     def __str__(self):
-
         return (
             f"{self.actor.name} is "
             f"{self.action_type}"
