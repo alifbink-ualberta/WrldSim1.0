@@ -1,3 +1,5 @@
+# main.py
+
 from simulation.world import World
 from simulation.person import Person
 from simulation.location import Location
@@ -112,35 +114,6 @@ def main():
     )
 
     # =========================
-    # PERSONAL GOALS
-    # =========================
-
-    mariam.goals = [
-        "Become financially secure",
-        "Protect her family"
-    ]
-
-    hassan.goals = [
-        "Become wealthy",
-        "Become respected in the merchant community"
-    ]
-
-    gorak.goals = [
-        "Become a respected hunter",
-        "Build a strong reputation"
-    ]
-
-    elira.goals = [
-        "Learn about the world",
-        "Become a respected scholar"
-    ]
-
-    thorin.goals = [
-        "Master his craft",
-        "Teach his knowledge to someone worthy"
-    ]
-
-    # =========================
     # ADD PEOPLE TO WORLD
     # =========================
 
@@ -154,6 +127,27 @@ def main():
 
     for person in people:
         world.add_person(person)
+
+    # =========================
+    # MOTIVATION DIAGNOSTICS
+    # =========================
+
+    print()
+    print("MOTIVATIONS")
+    print()
+
+    for person in people:
+
+        print(person.name)
+
+        for motivation in person.motivations.values():
+
+            print(
+                f"  {motivation.name}: "
+                f"{motivation.strength:.1f}"
+            )
+
+        print()
 
     # =========================
     # STARTING RESOURCES
@@ -237,6 +231,7 @@ def main():
         print(person)
 
     print()
+
     print(
         f"Simulation date: "
         f"Year {world.year}, "
@@ -284,3 +279,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,5 +1,6 @@
-class Person:
+# simulation/person.py
 
+class Person:
 
     def __init__(
         self,
@@ -49,6 +50,16 @@ class Person:
         self.sadism = sadism
 
         # =========================
+        # MOTIVATIONS
+        # =========================
+
+        from simulation.motivation import MotivationSystem
+
+        self.motivations = (
+            MotivationSystem.generate(self)
+        )
+
+        # =========================
         # NEEDS
         # =========================
 
@@ -66,17 +77,16 @@ class Person:
         # PSYCHOLOGY
         # =========================
 
+        # Goals will eventually be generated
+        # from motivations + circumstances.
         self.goals = []
+
         self.beliefs = []
 
         # =========================
         # SOCIAL
         # =========================
 
-        # Dictionary:
-        #
-        # other_person -> Relationship object
-        #
         self.relationships = {}
 
         # Events and experiences this person
@@ -155,8 +165,6 @@ class Person:
         if other == self:
             return None
 
-        # If no relationship exists yet,
-        # create one.
         if other not in self.relationships:
 
             relationship = Relationship(
@@ -166,15 +174,15 @@ class Person:
 
             self.relationships[other] = relationship
 
-            # The relationship object is shared
-            # between both people.
             other.relationships[self] = relationship
 
         return self.relationships[other]
 
     def get_known_people(self):
 
-        return list(self.relationships.keys())
+        return list(
+            self.relationships.keys()
+        )
 
     def change_relationship(
         self,
@@ -183,13 +191,14 @@ class Person:
     ):
 
         """
-        Compatibility helper for the old
-        buy/sell system.
+        Compatibility helper for the current
+        trade system.
 
-        A positive amount currently affects
-        trust and affection in both directions.
+        This currently changes trust and affection
+        symmetrically.
 
-        This will later become much more nuanced.
+        The relationship system will later become
+        asymmetric and layered.
         """
 
         if other == self:
@@ -239,7 +248,9 @@ class Person:
 
     def remember(self, memory):
 
-        self.memories.append(memory)
+        self.memories.append(
+            memory
+        )
 
     # ==================================================
     # ACTION EXECUTION
@@ -364,8 +375,6 @@ class Person:
                 100,
                 self.hunger + 4
             )
-
-            # Occupation-specific production
 
             if self.occupation == "Farmer":
 
@@ -719,3 +728,4 @@ class Person:
             f"{self.species}, "
             f"{self.occupation}"
         )
+
