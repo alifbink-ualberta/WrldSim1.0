@@ -1,29 +1,23 @@
 # simulation/person.py
 
-from systems.skills import SkillSet
-from systems.action_resolver import ActionResolver
+from simulation.genetics import Genetics
+from simulation.personality import Personality
+from simulation.body import Body
+from simulation.survival import SurvivalState
+from simulation.family import Family
 
 
 class Person:
 
     def __init__(
         self,
-        name,
+        first_name,
+        last_name,
         age,
-        species,
-
-        openness,
-        conscientiousness,
-        extraversion,
-        agreeableness,
-        neuroticism,
-
-        machiavellianism,
-        narcissism,
-        psychopathy,
-        sadism,
-
-        occupation,
+        sex,
+        genetics=None,
+        personality=None,
+        body=None,
         money=0
     ):
 
@@ -31,32 +25,66 @@ class Person:
         # IDENTITY
         # =========================
 
-        self.name = name
+        self.first_name = first_name
+        self.last_name = last_name
+
         self.age = age
-        self.species = species
-        self.occupation = occupation
+        self.sex = sex
+        self.family = Family(self)
+
+        # =========================
+        # BIOLOGY
+        # =========================
+
+        self.genetics = (
+            genetics
+            if genetics is not None
+            else Genetics()
+        )
+
+        self.body = (
+            body
+            if body is not None
+            else Body(self.genetics)
+        )
 
         # =========================
         # PERSONALITY
         # =========================
 
-        self.openness = openness
-        self.conscientiousness = conscientiousness
-        self.extraversion = extraversion
-        self.agreeableness = agreeableness
-        self.neuroticism = neuroticism
-
-        self.machiavellianism = machiavellianism
-        self.narcissism = narcissism
-        self.psychopathy = psychopathy
-        self.sadism = sadism
+        self.personality = (
+            personality
+            if personality is not None
+            else Personality()
+        )
 
         # =========================
-        # NEEDS
+        # MIND
         # =========================
 
-        self.hunger = 0
-        self.energy = 100
+        self.memories = []
+        self.beliefs = []
+        self.motivations = []
+        self.goals = []
+
+        # =========================
+        # DEVELOPMENT
+        # =========================
+
+        self.skills = {}
+        self.knowledge = {}
+
+        # =========================
+        # SOCIAL
+        # =========================
+
+        self.relationships = {}
+
+        # =========================
+        # SURVIVAL
+        # =========================
+
+        self.survival = SurvivalState()
 
         # =========================
         # ECONOMY
@@ -66,103 +94,79 @@ class Person:
         self.inventory = {}
 
         # =========================
-        # PSYCHOLOGY
-        # =========================
-
-        self.goals = []
-        self.beliefs = []
-
-        # =========================
-        # MOTIVATIONS
-        # =========================
-
-        self.motivations = {}
-
-        # =========================
-        # SKILLS
-        # =========================
-
-        self.skills = SkillSet()
-
-        # =========================
-        # SOCIAL
-        # =========================
-
-        self.relationships = {}
-
-        # =========================
-        # MEMORY
-        # =========================
-
-        self.memories = []
-
-        # =========================
-        # WORLD STATE
+        # WORLD
         # =========================
 
         self.location = None
 
-        # =========================
-        # CURRENT ACTIVITY
-        # =========================
+    # ==================================================
+    # IDENTITY
+    # ==================================================
 
-        self.current_activity = None
+    @property
+    def full_name(self):
 
-        # =========================
-        # ACTION SYSTEM
-        # =========================
+        return f"{self.first_name} {self.last_name}"
 
-        self.action_resolver = (
-            ActionResolver()
-        )
+    # ==================================================
+    # MEMORY
+    # ==================================================
+
+    def remember(self, memory):
+
+        self.memories.append(memory)
+
+    # ==================================================
+    # RELATIONSHIPS
+    # ==================================================
+
+    def get_relationship(self, other):
+
+        from simulation.relationship import Relationship
+
+        if other == self:
+            return None
+
+        if other not in self.relationships:
+
+            relationship = Relationship(
+                self,
+                other
+            )
+
+            self.relationships[other] = relationship
+
+            other.relationships[self] = relationship
+
+        return self.relationships[other]
 
     # ==================================================
     # INVENTORY
     # ==================================================
 
-    def add_item(
-        self,
-        item,
-        amount=1
-    ):
+    def add_item(self, item, amount=1):
 
         self.inventory[item] = (
             self.inventory.get(item, 0)
             + amount
         )
 
-    def remove_item(
-        self,
-        item,
-        amount=1
-    ):
+    def remove_item(self, item, amount=1):
 
-        if not self.has_item(
-            item,
-            amount
-        ):
-
+        if self.inventory.get(item, 0) < amount:
             return False
 
         self.inventory[item] -= amount
 
         if self.inventory[item] <= 0:
-
             del self.inventory[item]
 
         return True
 
-    def has_item(
-        self,
-        item,
-        amount=1
-    ):
+    def has_item(self, item, amount=1):
 
         return (
-            self.inventory.get(
-                item,
-                0
-            )
+            self.inventory.get(item, 0)
             >= amount
         )
 
@@ -177,130 +181,11 @@ class Person:
     def spend_money(self, amount):
 
         if self.money < amount:
-
             return False
 
         self.money -= amount
 
         return True
-
-    # ==================================================
-    # RELATIONSHIPS
-    # ==================================================
-
-    def get_relationship(
-        self,
-        other
-    ):
-
-        from simulation.relationship import (
-            Relationship
-        )
-
-        if other == self:
-
-            return None
-
-        if other not in self.relationships:
-
-            relationship = Relationship(
-                self,
-                other
-            )
-
-            self.relationships[other] = (
-                relationship
-            )
-
-            other.relationships[self] = (
-                relationship
-            )
-
-        return self.relationships[other]
-
-    def get_known_people(self):
-
-        return list(
-            self.relationships.keys()
-        )
-
-    def change_relationship(
-        self,
-        other,
-        amount
-    ):
-
-        if other == self:
-
-            return
-
-        relationship = (
-            self.get_relationship(
-                other
-            )
-        )
-
-        relationship.trust_a_to_b = max(
-            -100,
-            min(
-                100,
-                relationship.trust_a_to_b
-                + amount
-            )
-        )
-
-        relationship.affection_a_to_b = max(
-            -100,
-            min(
-                100,
-                relationship.affection_a_to_b
-                + amount
-            )
-        )
-
-        relationship.trust_b_to_a = max(
-            -100,
-            min(
-                100,
-                relationship.trust_b_to_a
-                + amount
-            )
-        )
-
-        relationship.affection_b_to_a = max(
-            -100,
-            min(
-                100,
-                relationship.affection_b_to_a
-                + amount
-            )
-        )
-
-    # ==================================================
-    # MEMORY
-    # ==================================================
-
-    def remember(self, memory):
-
-        self.memories.append(
-            memory
-        )
-
-    # ==================================================
-    # ACTION EXECUTION
-    # ==================================================
-
-    def perform_action(
-        self,
-        action,
-        world
-    ):
-
-        return self.action_resolver.resolve(
-            self,
-            action,
-            world
-        )
 
     # ==================================================
     # DEBUGGING
@@ -309,8 +194,7 @@ class Person:
     def __str__(self):
 
         return (
-            f"{self.name}, "
+            f"{self.full_name}, "
             f"age {self.age}, "
-            f"{self.species}, "
-            f"{self.occupation}"
+            f"sex {self.sex}"
         )
