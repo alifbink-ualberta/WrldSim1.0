@@ -5,26 +5,23 @@ class Event:
 
     def __init__(
         self,
-        world,
-        event_type,
+        name,
         description="",
         participants=None,
         location=None,
-        significance=0.0
+        cause=None
     ):
 
-        self.world = world
-
-        # =========================
+        # ==========================================
         # IDENTITY
-        # =========================
+        # ==========================================
 
-        self.event_type = event_type
+        self.name = name
         self.description = description
 
-        # =========================
+        # ==========================================
         # PARTICIPANTS
-        # =========================
+        # ==========================================
 
         self.participants = (
             participants
@@ -32,23 +29,68 @@ class Event:
             else []
         )
 
-        # =========================
+        # ==========================================
         # LOCATION
-        # =========================
+        # ==========================================
 
         self.location = location
 
-        # =========================
-        # SIGNIFICANCE
-        # =========================
+        # ==========================================
+        # CAUSE
+        # ==========================================
 
-        self.significance = significance
+        self.cause = cause
 
-        # =========================
-        # TIME
-        # =========================
+        # ==========================================
+        # WORLD TIME
+        # ==========================================
+
+        self.year = None
+        self.month = None
+        self.day = None
+        self.hour = None
+        self.minute = None
+
+        # ==========================================
+        # STATE
+        # ==========================================
+
+        self.resolved = False
+
+    # ==============================================
+    # PARTICIPANTS
+    # ==============================================
+
+    def add_participant(self, person):
+
+        if person not in self.participants:
+
+            self.participants.append(person)
+
+    # ==============================================
+    # TIMESTAMP
+    # ==============================================
+
+    def set_time(self, world):
 
         self.year = world.year
         self.month = world.month
         self.day = world.day
         self.hour = world.hour
+        self.minute = world.minute
+
+    # ==============================================
+    # RESOLUTION
+    # ==============================================
+
+    def resolve(self):
+
+        self.resolved = True
+
+    # ==============================================
+    # DEBUGGING
+    # ==============================================
+
+    def __str__(self):
+
+        return self.name

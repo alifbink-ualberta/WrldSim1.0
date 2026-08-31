@@ -1,10 +1,6 @@
 # simulation/world.py
 
 from simulation.activity import Activity
-
-from systems.behavior_registry import BehaviorRegistry
-from systems.decision_making import DecisionSystem
-from systems.action_resolver import ActionResolver
 from systems.actions import get_action_duration
 from systems.needs import update_needs
 
@@ -36,14 +32,10 @@ class World:
         self.locations = {}
 
         # ==========================================
-        # SIMULATION SYSTEMS
+        # CIRCUMSTANCES
         # ==========================================
 
-        self.behavior_registry = BehaviorRegistry()
-
-        self.decision_system = DecisionSystem()
-
-        self.action_resolver = ActionResolver()
+        self.circumstances = []
 
         # ==========================================
         # SIMULATION STATE
@@ -89,6 +81,34 @@ class World:
         location.enter(person)
 
         return True
+
+    # ==============================================
+    # CIRCUMSTANCES
+    # ==============================================
+
+    def add_circumstance(self, circumstance):
+
+        self.circumstances.append(
+            circumstance
+        )
+
+    def remove_circumstance(self, circumstance):
+
+        if circumstance in self.circumstances:
+
+            self.circumstances.remove(
+                circumstance
+            )
+
+    def has_circumstance(self, name):
+
+        for circumstance in self.circumstances:
+
+            if circumstance.name == name:
+
+                return True
+
+        return False
 
     # ==============================================
     # TIME
@@ -182,7 +202,7 @@ class World:
 
         print(
             f"{self.timestamp()} "
-            f"{person.name} begins "
+            f"{person.full_name} begins "
             f"{action.action_type} "
             f"(score={score:.1f}, "
             f"duration={duration}m)"

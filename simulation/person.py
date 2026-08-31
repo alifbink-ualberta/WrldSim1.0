@@ -91,6 +91,12 @@ class Person:
         self.survival = SurvivalState()
 
         # =========================
+        # CIRCUMSTANCES
+        # =========================
+
+        self.circumstances = []
+
+        # =========================
         # ECONOMY
         # =========================
 
@@ -118,9 +124,9 @@ class Person:
 
     def update_goals(self, world):
 
-        from systems.goals import generate_goals
+        from systems.goals import update_goals
 
-        self.goals = generate_goals(
+        update_goals(
             self,
             world
         )
@@ -180,6 +186,39 @@ class Person:
             other.relationships[self] = relationship
 
         return self.relationships[other]
+
+    # ==================================================
+    # CIRCUMSTANCES
+    # ==================================================
+
+    def add_circumstance(self, circumstance):
+
+        self.circumstances.append(
+            circumstance
+        )
+
+
+    def remove_circumstance(
+        self,
+        circumstance
+    ):
+
+        if circumstance in self.circumstances:
+
+            self.circumstances.remove(
+                circumstance
+            )
+
+
+    def has_circumstance(self, name):
+
+        for circumstance in self.circumstances:
+
+            if circumstance.name == name:
+
+                return True
+
+        return False
 
     # ==================================================
     # INVENTORY

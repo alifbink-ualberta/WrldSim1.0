@@ -1,107 +1,84 @@
+# systems/opportunities.py
+
+
 from simulation.opportunity import Opportunity
 
 
-RESOURCE_PRICES = {
-
-    "food": 5,
-    "meat": 7,
-    "tools": 15
-}
-
-
-def get_people_nearby(person, world):
-
-    nearby = []
-
-    for other in world.people:
-
-        if other is person:
-            continue
-
-        if (
-            other.location == person.location
-        ):
-
-            nearby.append(other)
-
-    return nearby
-
-
-def generate_trade_opportunities(
-    person,
-    world
-):
+def generate_opportunities(person, world):
 
     opportunities = []
 
-    nearby_people = get_people_nearby(
-        person,
-        world
+    # ==========================================
+    # BASIC PERSONAL OPPORTUNITIES
+    # ==========================================
+
+    opportunities.append(
+        Opportunity("eat")
     )
 
-    # =====================================
-    # SELLING
-    # =====================================
+    opportunities.append(
+        Opportunity("sleep")
+    )
 
-    for item, amount in person.inventory.items():
+    opportunities.append(
+        Opportunity("practice")
+    )
 
-        if amount <= 0:
+    opportunities.append(
+        Opportunity("explore")
+    )
+
+    # ==========================================
+    # SOCIAL OPPORTUNITIES
+    # ==========================================
+
+    for other in world.people:
+
+        if other == person:
             continue
 
-        if item not in RESOURCE_PRICES:
-            continue
+        # People in the same location can interact.
 
-        price = RESOURCE_PRICES[item]
-
-        for other in nearby_people:
-
-            # Other person must actually
-            # be able to afford the item.
-
-            if other.money < price:
-                continue
+        if (
+            person.location is not None
+            and other.location == person.location
+        ):
 
             opportunities.append(
                 Opportunity(
-                    actor=person,
-                    action_type="sell",
-                    target=other,
-                    item=item,
-                    amount=1,
-                    price=price,
-                    reason="has_surplus"
+                    "socialize",
+                    target=other
                 )
             )
 
-    # =====================================
-    # BUYING
-    # =====================================
+    # ==========================================
+    # WORK
+    # ==========================================
 
-    for other in nearby_people:
+    # For now, work is available everywhere.
+    #
+    # Later this will come from actual workplaces,
+    # employers, contracts and occupations.
 
-        for item, amount in other.inventory.items():
+    opportunities.append(
+        Opportunity("work")
+    )
 
-            if amount <= 0:
-                continue
+    # ==========================================
+    # FILTER
+    # ==========================================
 
-            if item not in RESOURCE_PRICES:
-                continue
+    available = []
 
-            price = RESOURCE_PRICES[item]
+    for opportunity in opportunities:
 
-            if person.money < price:
-                continue
+        if opportunity.is_available(
+            person,
+            world
+        ):
 
-            opportunities.append(
-                Opportunity(
-                    actor=person,
-                    action_type="buy",
-                    target=other,
-                    item=item,
-                    amount=1,
-                    price=price,
-                    reason="needs_resource"
-                )
+            available.append(
+                opportunity
             )
 
-    return opportunities
+    return available

@@ -7,7 +7,8 @@ class Action:
         self,
         action_type,
         target=None,
-        location=None
+        location=None,
+        opportunity=None
     ):
 
         # ==========================================
@@ -27,6 +28,12 @@ class Action:
         # ==========================================
 
         self.location = location
+
+        # ==========================================
+        # OPPORTUNITY
+        # ==========================================
+
+        self.opportunity = opportunity
 
     def __str__(self):
 
