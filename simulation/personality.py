@@ -26,3 +26,39 @@ class Personality:
         self.narcissism = narcissism
         self.psychopathy = psychopathy
         self.sadism = sadism
+
+    # ==================================================
+    # DEVELOPMENT
+    # ==================================================
+
+    def modify_trait(
+        self,
+        trait,
+        amount
+    ):
+
+        if not hasattr(
+            self,
+            trait
+        ):
+            return False
+
+        value = getattr(
+            self,
+            trait
+        )
+
+        value += amount
+
+        value = max(
+            0.0,
+            min(1.0, value)
+        )
+
+        setattr(
+            self,
+            trait,
+            value
+        )
+
+        return True

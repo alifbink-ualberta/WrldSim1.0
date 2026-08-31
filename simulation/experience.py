@@ -5,22 +5,30 @@ class Experience:
 
     def __init__(
         self,
-        person,
-        event_type,
+        category,
         description,
-        participants=None,
-        intensity=0.5
+        duration_minutes=0,
+        intensity=0.5,
+        source=None
     ):
 
-        self.person = person
-
-        self.event_type = event_type
+        self.category = category
         self.description = description
 
-        self.participants = (
-            participants
-            if participants is not None
-            else []
+        self.duration_minutes = duration_minutes
+
+        # How strongly this experience affects
+        # the person's development.
+        #
+        # 0.0 = almost meaningless
+        # 1.0 = extremely significant
+        self.intensity = max(
+            0.0,
+            min(1.0, intensity)
         )
 
-        self.intensity = intensity
+        self.source = source
+
+    def __str__(self):
+
+        return self.description

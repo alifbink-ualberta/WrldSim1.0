@@ -3,7 +3,7 @@
 from simulation.activity import Activity
 from systems.actions import get_action_duration
 from systems.needs import update_needs
-
+from systems.upbringing import UpbringingSystem
 
 class World:
 
@@ -280,14 +280,26 @@ class World:
         if not self.running:
             return
 
-        # ------------------------------------------
-        # UPDATE NEEDS
-        # ------------------------------------------
-
         for person in self.people:
+
+            # --------------------------------------
+            # UPDATE NEEDS
+            # --------------------------------------
 
             update_needs(
                 person,
+                minutes=1
+            )
+
+            # --------------------------------------
+            # DEVELOPMENT
+            # --------------------------------------
+
+            person.update_development_stage()
+
+            UpbringingSystem.update(
+                person,
+                self,
                 minutes=1
             )
 
@@ -420,3 +432,28 @@ class World:
     def start(self):
 
         self.running = True
+
+    # ==============================================
+    # REPRODUCTION
+    # ==============================================
+
+    def have_child(
+        self,
+        parent_a,
+        parent_b,
+        first_name
+    ):
+
+        from systems.reproduction import (
+            ReproductionSystem
+        )
+
+        return (
+            ReproductionSystem
+            .have_child(
+                parent_a,
+                parent_b,
+                first_name,
+                self
+            )
+        )

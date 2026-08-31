@@ -79,6 +79,9 @@ class Person:
         self.skills = {}
         self.knowledge = {}
 
+        self.experiences = []
+        self.development_stage = "adult" if age >= 18 else "child"
+
         # ==========================================
         # SOCIAL
         # ==========================================
@@ -145,6 +148,81 @@ class Person:
 
         return memory
 
+    # ==================================================
+    # DEVELOPMENT
+    # ==================================================
+
+    def add_experience(
+        self,
+        experience
+    ):
+
+        self.experiences.append(
+            experience
+        )
+
+        from systems.development import (
+            DevelopmentSystem
+        )
+
+        DevelopmentSystem.process_experience(
+            self,
+            experience
+        )
+
+    def gain_skill_experience(
+        self,
+        skill_name,
+        amount
+    ):
+
+        from systems.development import (
+            DevelopmentSystem
+        )
+
+        return (
+            DevelopmentSystem
+            .gain_skill_experience(
+                self,
+                skill_name,
+                amount
+            )
+        )
+
+    def get_skill(
+        self,
+        skill_name
+    ):
+
+        from systems.development import (
+            DevelopmentSystem
+        )
+
+        return (
+            DevelopmentSystem
+            .get_skill(
+                self,
+                skill_name
+            )
+        )
+
+    def update_development_stage(self):
+
+        if self.age < 5:
+
+            self.development_stage = "infant"
+
+        elif self.age < 13:
+
+            self.development_stage = "child"
+
+        elif self.age < 18:
+
+            self.development_stage = "adolescent"
+
+        else:
+
+            self.development_stage = "adult"
     # ==============================================
     # RELATIONSHIPS
     # ==============================================
@@ -168,6 +246,70 @@ class Person:
             other.relationships[self] = relationship
 
         return self.relationships[other]
+
+    # ==================================================
+    # SOCIAL INTERACTION
+    # ==================================================
+
+    def interact_with(
+        self,
+        other,
+        interaction_type,
+        world,
+        intensity=0.5
+    ):
+
+        from systems.social_interaction import (
+            SocialInteractionSystem
+        )
+
+        return (
+            SocialInteractionSystem.perform(
+                self,
+                other,
+                interaction_type,
+                world,
+                intensity
+            )
+        )
+
+    # ==================================================
+    # PERCEPTION
+    # ==================================================
+
+    def perceive_event(
+        self,
+        event
+    ):
+
+        from systems.perception import (
+            PerceptionSystem
+        )
+
+        return PerceptionSystem.perceive(
+            self,
+            event
+        )
+
+    # ==================================================
+    # PSYCHOLOGICAL RESPONSE
+    # ==================================================
+
+    def respond_to_interpretation(
+        self,
+        interpretation
+    ):
+
+        from systems.psychological_response import (
+            PsychologicalResponseSystem
+        )
+
+        return (
+            PsychologicalResponseSystem.process(
+                self,
+                interpretation
+            )
+        )
 
     # ==============================================
     # INVENTORY

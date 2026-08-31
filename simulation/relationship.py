@@ -82,3 +82,40 @@ class Relationship:
             "attraction": self.attraction[person],
             "familiarity": self.familiarity[person]
         }
+
+    # ==================================================
+    # VALUE MODIFICATION
+    # ==================================================
+
+    def change_feeling(
+        self,
+        feeling,
+        person,
+        amount
+    ):
+
+        if feeling not in [
+            "affection",
+            "trust",
+            "respect",
+            "fear",
+            "resentment",
+            "attraction",
+            "familiarity"
+        ]:
+            return False
+
+        values = getattr(
+            self,
+            feeling
+        )
+
+        values[person] = max(
+            -1.0,
+            min(
+                1.0,
+                values[person] + amount
+            )
+        )
+
+        return True

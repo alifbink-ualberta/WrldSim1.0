@@ -5,7 +5,31 @@ from simulation.interpretation import Interpretation
 from simulation.intent import PerceivedIntent
 
 
-def interpret_event(person, event):
+def interpret_event(person, perception):
+
+    # ==========================================
+    # PERCEPTION
+    # ==========================================
+
+    event = perception["event"]
+
+    clarity = perception["clarity"]
+
+    if not perception["noticed"]:
+
+        interpretation = Interpretation(
+            person=person,
+            event=event,
+            meaning=(
+                f"{person.full_name} did not "
+                f"notice the event."
+            ),
+            emotional_impact=0.0
+        )
+
+        interpretation.perceived_intent = None
+
+        return interpretation
 
     event_type = event.event_type
 
@@ -55,6 +79,16 @@ def interpret_event(person, event):
 
         meaning = event.description
         impact = event.significance
+
+    # ==========================================
+    # PERCEPTION CLARITY
+    # ==========================================
+
+    # Someone who only partially perceives an
+    # event should generally experience less
+    # certainty and emotional impact.
+
+    impact *= clarity
 
     # ==========================================
     # FIND OTHER PERSON
@@ -327,12 +361,24 @@ def interpret_event(person, event):
 
             confidence = 0.8
 
+        # --------------------------------------
+        # PERCEPTION UNCERTAINTY
+        # --------------------------------------
+
+        # Poor perception means weaker confidence
+        # in the interpretation.
+
+        confidence *= clarity
+
         perceived_intent = PerceivedIntent(
             person=person,
             other=other,
             event=event,
             intention=intention,
-            confidence=confidence
+            confidence=round(
+                confidence,
+                2
+            )
         )
 
     # ==========================================
@@ -358,8 +404,7 @@ def interpret_event(person, event):
         )
     )
 
-    # Attach perceived intent to the
-    # interpretation.
+    # Attach perceived intent.
 
     interpretation.perceived_intent = (
         perceived_intent

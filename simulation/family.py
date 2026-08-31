@@ -8,127 +8,120 @@ class Family:
         self.person = person
 
         # ==========================================
-        # PARENTS
+        # IMMEDIATE FAMILY
         # ==========================================
 
         self.parents = []
 
-        # ==========================================
-        # CHILDREN
-        # ==========================================
-
         self.children = []
 
-        # ==========================================
-        # PARTNERS
-        # ==========================================
-
-        self.partners = []
+        self.siblings = []
 
     # ==============================================
     # PARENTS
     # ==============================================
 
-    def add_parent(self, parent):
+    def set_parents(
+        self,
+        parent_a,
+        parent_b
+    ):
 
-        if parent is self.person:
-            return
+        self.parents = []
 
-        if parent not in self.parents:
-
-            self.parents.append(parent)
-
-        if self.person not in parent.family.children:
-
-            parent.family.children.append(
-                self.person
+        if parent_a is not None:
+            self.parents.append(
+                parent_a
             )
+
+        if parent_b is not None:
+            self.parents.append(
+                parent_b
+            )
+
+        self.update_siblings()
 
     # ==============================================
     # CHILDREN
     # ==============================================
 
-    def add_child(self, child):
-
-        if child is self.person:
-            return
+    def add_child(
+        self,
+        child
+    ):
 
         if child not in self.children:
 
-            self.children.append(child)
-
-        if self.person not in child.family.parents:
-
-            child.family.parents.append(
-                self.person
+            self.children.append(
+                child
             )
 
-    # ==============================================
-    # PARTNERS
-    # ==============================================
+        # Every existing child of this parent
+        # becomes a sibling of the new child.
 
-    def add_partner(self, partner):
+        for existing_child in self.children:
 
-        if partner is self.person:
-            return
+            if existing_child == child:
+                continue
 
-        if partner not in self.partners:
+            if existing_child not in child.family.siblings:
 
-            self.partners.append(partner)
+                child.family.siblings.append(
+                    existing_child
+                )
 
-        if self.person not in partner.family.partners:
+            if child not in existing_child.family.siblings:
 
-            partner.family.partners.append(
-                self.person
-            )
+                existing_child.family.siblings.append(
+                    child
+                )
 
     # ==============================================
     # SIBLINGS
     # ==============================================
 
-    def get_siblings(self):
-
-        siblings = []
+    def update_siblings(self):
 
         for parent in self.parents:
 
-            for child in parent.family.children:
+            for sibling in parent.family.children:
 
-                if (
-                    child is not self.person
-                    and child not in siblings
-                ):
+                if sibling == self.person:
+                    continue
 
-                    siblings.append(child)
+                if sibling not in self.siblings:
 
-        return siblings
+                    self.siblings.append(
+                        sibling
+                    )
+
+                if self.person not in sibling.family.siblings:
+
+                    sibling.family.siblings.append(
+                        self.person
+                    )
 
     # ==============================================
-    # FAMILY MEMBERS
+    # RELATIONSHIPS
     # ==============================================
 
-    def get_family_members(self):
+    def is_parent_of(
+        self,
+        person
+    ):
 
-        members = []
+        return person in self.children
 
-        for parent in self.parents:
+    def is_child_of(
+        self,
+        person
+    ):
 
-            if parent not in members:
-                members.append(parent)
+        return person in self.parents
 
-        for child in self.children:
+    def is_sibling_of(
+        self,
+        person
+    ):
 
-            if child not in members:
-                members.append(child)
-
-        for partner in self.partners:
-
-            if partner not in members:
-                members.append(partner)
-
-        for sibling in self.get_siblings():
-
-            if sibling not in members:
-                members.append(sibling)
-
-        return members
+        return person in self.siblings
