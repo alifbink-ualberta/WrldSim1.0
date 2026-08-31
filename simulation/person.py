@@ -6,7 +6,7 @@ from simulation.body import Body
 from simulation.survival import SurvivalState
 from simulation.family import Family
 from simulation.emotion import EmotionalState
-
+from systems.motivation import generate_motivations
 
 
 class Person:
@@ -111,6 +111,19 @@ class Person:
     def full_name(self):
 
         return f"{self.first_name} {self.last_name}"
+
+    # ==================================================
+    # GOALS
+    # ==================================================
+
+    def update_goals(self, world):
+
+        from systems.goals import generate_goals
+
+        self.goals = generate_goals(
+            self,
+            world
+        )
 
     # ==================================================
     # MEMORY

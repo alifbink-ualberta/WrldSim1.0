@@ -1,40 +1,40 @@
-from dataclasses import dataclass
-from typing import Optional
+# simulation/action.py
 
 
-@dataclass
 class Action:
 
-    actor: object
-    action_type: str
+    def __init__(
+        self,
+        action_type,
+        target=None,
+        location=None
+    ):
 
-    target: Optional[object] = None
-    reason: Optional[str] = None
+        # ==========================================
+        # IDENTITY
+        # ==========================================
 
-    item: Optional[str] = None
-    amount: int = 0
-    price: float = 0
+        self.action_type = action_type
+
+        # ==========================================
+        # TARGET
+        # ==========================================
+
+        self.target = target
+
+        # ==========================================
+        # LOCATION
+        # ==========================================
+
+        self.location = location
 
     def __str__(self):
 
-        target = ""
+        if self.target is not None:
 
-        if self.target:
-            target = (
-                f" → {self.target.name}"
+            return (
+                f"{self.action_type} "
+                f"{self.target.full_name}"
             )
 
-        item = ""
-
-        if self.item:
-            item = (
-                f" | {self.amount} "
-                f"{self.item}"
-            )
-
-        return (
-            f"{self.actor.name} "
-            f"{self.action_type}"
-            f"{target}"
-            f"{item}"
-        )
+        return self.action_type

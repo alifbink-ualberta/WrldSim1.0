@@ -1,113 +1,201 @@
-import random
-
-from systems.considerations import (
-    NeedConsideration,
-    GoalConsideration,
-    PersonalityConsideration,
-    CircumstanceConsideration
-)
+# systems/decision_making.py
 
 
-class DecisionSystem:
+def choose_action(person, world):
 
-    def __init__(self):
+    from simulation.action import Action
 
-        self.considerations = [
-            NeedConsideration(),
-            GoalConsideration(),
-            PersonalityConsideration(),
-            CircumstanceConsideration()
-        ]
-
-        # Controls how deterministic decisions are.
-        #
-        # 0.0 = always choose highest score
-        # 1.0 = significant behavioural variation
-        #
-        self.randomness = 0.15
+    possible_actions = []
 
     # ==========================================
-    # EXTENSION
+    # BASIC ACTIONS
     # ==========================================
 
-    def add_consideration(self, consideration):
+    possible_actions.append(
+        Action("eat")
+    )
 
-        self.considerations.append(
-            consideration
+    possible_actions.append(
+        Action("sleep")
+    )
+
+    possible_actions.append(
+        Action("work")
+    )
+
+    possible_actions.append(
+        Action("practice")
+    )
+
+    possible_actions.append(
+        Action("socialize")
+    )
+
+    possible_actions.append(
+        Action("explore")
+    )
+
+    # ==========================================
+    # SCORE ACTIONS
+    # ==========================================
+
+    best_action = None
+    best_score = float("-inf")
+
+    for action in possible_actions:
+
+        score = score_action(
+            person,
+            action,
+            world
+        )
+
+        if score > best_score:
+
+            best_score = score
+            best_action = action
+
+    return best_action, best_score
+
+
+def score_action(
+    person,
+    action,
+    world
+):
+
+    score = 0.0
+
+    # ==========================================
+    # SURVIVAL
+    # ==========================================
+
+    survival = person.survival
+
+    if action.action_type == "eat":
+
+        # Placeholder until SurvivalState
+        # becomes more developed.
+
+        score += 0.0
+
+    if action.action_type == "sleep":
+
+        score += 0.0
+
+    # ==========================================
+    # MOTIVATIONS
+    # ==========================================
+
+    motivations = person.motivations
+
+    if action.action_type == "socialize":
+
+        score += (
+            motivations[
+                "social_connection"
+            ].strength
+            * 10
+        )
+
+    if action.action_type == "practice":
+
+        score += (
+            motivations[
+                "achievement"
+            ].strength
+            * 8
+        )
+
+        score += (
+            motivations[
+                "knowledge"
+            ].strength
+            * 5
+        )
+
+    if action.action_type == "work":
+
+        score += (
+            motivations[
+                "security"
+            ].strength
+            * 8
+        )
+
+        score += (
+            motivations[
+                "achievement"
+            ].strength
+            * 5
+        )
+
+        score += (
+            motivations[
+                "status"
+            ].strength
+            * 3
+        )
+
+    if action.action_type == "explore":
+
+        score += (
+            motivations[
+                "autonomy"
+            ].strength
+            * 8
+        )
+
+        score += (
+            motivations[
+                "knowledge"
+            ].strength
+            * 8
+        )
+
+        score += (
+            motivations[
+                "achievement"
+            ].strength
+            * 5
         )
 
     # ==========================================
-    # SCORING
+    # PERSONALITY
     # ==========================================
 
-    def score_action(
-        self,
-        person,
-        action,
-        world
-    ):
+    personality = person.personality
 
-        total = 0
+    if action.action_type == "explore":
 
-        for consideration in self.considerations:
-
-            total += consideration.score(
-                person,
-                action,
-                world
-            )
-
-        return total
-
-    # ==========================================
-    # CHOICE
-    # ==========================================
-
-    def choose_action(
-        self,
-        person,
-        world,
-        behavior_registry
-    ):
-
-        actions = (
-            behavior_registry.generate_actions(
-                person,
-                world
-            )
+        score += (
+            personality.openness
+            * 5
         )
 
-        if not actions:
-            return None, 0
+    if action.action_type == "socialize":
 
-        scored = []
-
-        for action in actions:
-
-            score = self.score_action(
-                person,
-                action,
-                world
-            )
-
-            # Small random variation.
-            #
-            # This prevents identical people
-            # from becoming perfectly deterministic.
-            variation = random.uniform(
-                -abs(score) * self.randomness,
-                abs(score) * self.randomness
-            )
-
-            final_score = score + variation
-
-            scored.append(
-                (action, final_score)
-            )
-
-        scored.sort(
-            key=lambda item: item[1],
-            reverse=True
+        score += (
+            personality.extraversion
+            * 5
         )
 
-        return scored[0]
+    if action.action_type == "work":
+
+        score += (
+            personality.conscientiousness
+            * 5
+        )
+
+    if action.action_type == "practice":
+
+        score += (
+            personality.conscientiousness
+            * 4
+        )
+
+    # ==========================================
+    # RETURN
+    # ==========================================
+
+    return score
