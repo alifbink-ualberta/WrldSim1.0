@@ -8,6 +8,7 @@ class EventSystem:
         world,
         name,
         description="",
+        event_type="generic",
         participants=None,
         location=None,
         cause=None
@@ -18,6 +19,7 @@ class EventSystem:
         event = Event(
             name=name,
             description=description,
+            event_type=event_type,
             participants=participants,
             location=location,
             cause=cause
@@ -27,7 +29,7 @@ class EventSystem:
 
         event.set_time(world)
 
-        # Add it to the world's event history.
+        # Add it to world history.
 
         world.events.append(event)
 

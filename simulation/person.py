@@ -6,7 +6,6 @@ from simulation.body import Body
 from simulation.survival import SurvivalState
 from simulation.family import Family
 from simulation.emotion import EmotionalState
-from systems.motivation import generate_motivations
 
 
 class Person:
@@ -23,20 +22,22 @@ class Person:
         money=0
     ):
 
-        # =========================
+        # ==========================================
         # IDENTITY
-        # =========================
+        # ==========================================
 
         self.first_name = first_name
         self.last_name = last_name
 
         self.age = age
         self.sex = sex
+        self.is_alive = True
+
         self.family = Family(self)
 
-        # =========================
+        # ==========================================
         # BIOLOGY
-        # =========================
+        # ==========================================
 
         self.genetics = (
             genetics
@@ -50,9 +51,9 @@ class Person:
             else Body(self.genetics)
         )
 
-        # =========================
+        # ==========================================
         # PERSONALITY
-        # =========================
+        # ==========================================
 
         self.personality = (
             personality
@@ -62,78 +63,59 @@ class Person:
 
         self.emotions = EmotionalState()
 
-        # =========================
+        # ==========================================
         # MIND
-        # =========================
+        # ==========================================
 
         self.memories = []
         self.beliefs = []
         self.motivations = []
         self.goals = []
 
-        # =========================
+        # ==========================================
         # DEVELOPMENT
-        # =========================
+        # ==========================================
 
         self.skills = {}
         self.knowledge = {}
 
-        # =========================
+        # ==========================================
         # SOCIAL
-        # =========================
+        # ==========================================
 
         self.relationships = {}
 
-        # =========================
+        # ==========================================
         # SURVIVAL
-        # =========================
+        # ==========================================
 
         self.survival = SurvivalState()
 
-        # =========================
-        # CIRCUMSTANCES
-        # =========================
-
-        self.circumstances = []
-
-        # =========================
+        # ==========================================
         # ECONOMY
-        # =========================
+        # ==========================================
 
         self.money = money
         self.inventory = {}
 
-        # =========================
+        # ==========================================
         # WORLD
-        # =========================
+        # ==========================================
 
         self.location = None
 
-    # ==================================================
+    # ==============================================
     # IDENTITY
-    # ==================================================
+    # ==============================================
 
     @property
     def full_name(self):
 
         return f"{self.first_name} {self.last_name}"
 
-    # ==================================================
-    # GOALS
-    # ==================================================
-
-    def update_goals(self, world):
-
-        from systems.goals import update_goals
-
-        update_goals(
-            self,
-            world
-        )
-
-    # ==================================================
+    # ==============================================
     # MEMORY
-    # ==================================================
+    # ==============================================
 
     def remember(
         self,
@@ -163,9 +145,9 @@ class Person:
 
         return memory
 
-    # ==================================================
+    # ==============================================
     # RELATIONSHIPS
-    # ==================================================
+    # ==============================================
 
     def get_relationship(self, other):
 
@@ -187,42 +169,9 @@ class Person:
 
         return self.relationships[other]
 
-    # ==================================================
-    # CIRCUMSTANCES
-    # ==================================================
-
-    def add_circumstance(self, circumstance):
-
-        self.circumstances.append(
-            circumstance
-        )
-
-
-    def remove_circumstance(
-        self,
-        circumstance
-    ):
-
-        if circumstance in self.circumstances:
-
-            self.circumstances.remove(
-                circumstance
-            )
-
-
-    def has_circumstance(self, name):
-
-        for circumstance in self.circumstances:
-
-            if circumstance.name == name:
-
-                return True
-
-        return False
-
-    # ==================================================
+    # ==============================================
     # INVENTORY
-    # ==================================================
+    # ==============================================
 
     def add_item(self, item, amount=1):
 
@@ -250,9 +199,9 @@ class Person:
             >= amount
         )
 
-    # ==================================================
+    # ==============================================
     # ECONOMY
-    # ==================================================
+    # ==============================================
 
     def earn_money(self, amount):
 
@@ -267,9 +216,9 @@ class Person:
 
         return True
 
-    # ==================================================
+    # ==============================================
     # DEBUGGING
-    # ==================================================
+    # ==============================================
 
     def __str__(self):
 

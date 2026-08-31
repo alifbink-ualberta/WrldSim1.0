@@ -7,6 +7,7 @@ class Event:
         self,
         name,
         description="",
+        event_type="generic",
         participants=None,
         location=None,
         cause=None
@@ -18,6 +19,7 @@ class Event:
 
         self.name = name
         self.description = description
+        self.event_type = event_type
 
         # ==========================================
         # PARTICIPANTS
@@ -28,6 +30,12 @@ class Event:
             if participants is not None
             else []
         )
+
+        # ==========================================
+        # OBSERVERS
+        # ==========================================
+
+        self.observers = []
 
         # ==========================================
         # LOCATION
@@ -66,6 +74,17 @@ class Event:
         if person not in self.participants:
 
             self.participants.append(person)
+
+
+    # ==============================================
+    # OBSERVERS
+    # ==============================================
+
+    def add_observer(self, person):
+
+        if person not in self.observers:
+
+            self.observers.append(person)
 
     # ==============================================
     # TIMESTAMP

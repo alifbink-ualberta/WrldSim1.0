@@ -9,25 +9,24 @@ class ConsequenceSystem:
         consequences = []
 
         # ==========================================
-        # PROCESS EVENT
+        # DEATH
         # ==========================================
 
-        if event.name == "Father's Death":
+        if event.event_type == "death":
 
             for person in event.participants:
 
+                if not person.is_alive:
+                    continue
+
                 # ----------------------------------
-                # MEMORY
+                # CHANGE WORLD STATE
                 # ----------------------------------
 
-                person.remember(
-                    event,
-                    emotional_significance=1.0
-                )
+                person.is_alive = False
 
                 consequences.append(
-                    f"{person.full_name} remembers "
-                    f"the death of their father."
+                    f"{person.full_name} has died."
                 )
 
         # ==========================================
