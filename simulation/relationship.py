@@ -8,7 +8,15 @@ class Relationship:
         self.person_a = person_a
         self.person_b = person_b
 
-        # Emotional dimensions
+        # ==========================================
+        # CONNECTIONS
+        # ==========================================
+
+        self.connections = set()
+
+        # ==========================================
+        # FEELINGS
+        # ==========================================
 
         self.affection = {
             person_a: 0.0,
@@ -35,10 +43,42 @@ class Relationship:
             person_b: 0.0
         }
 
-        # Connections
+        self.attraction = {
+            person_a: 0.0,
+            person_b: 0.0
+        }
 
-        self.connections = set()
+        self.familiarity = {
+            person_a: 0.0,
+            person_b: 0.0
+        }
 
-        # Shared history
+        # ==========================================
+        # SHARED HISTORY
+        # ==========================================
 
-        self.memories = []
+        self.history = []
+
+    # ==================================================
+    # HISTORY
+    # ==================================================
+
+    def add_history(self, interaction):
+
+        self.history.append(interaction)
+
+    # ==================================================
+    # GET FEELINGS
+    # ==================================================
+
+    def get_feelings(self, person):
+
+        return {
+            "affection": self.affection[person],
+            "trust": self.trust[person],
+            "respect": self.respect[person],
+            "fear": self.fear[person],
+            "resentment": self.resentment[person],
+            "attraction": self.attraction[person],
+            "familiarity": self.familiarity[person]
+        }

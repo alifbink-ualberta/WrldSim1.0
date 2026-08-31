@@ -1,147 +1,121 @@
-import random
+from simulation.interaction import Interaction
 
 
-def choose_social_target(person, world):
-
-    possible_targets = []
-
-    for other in world.people:
-
-        if other == person:
-            continue
-
-        # For now, people can only socialize
-        # with someone at the same location.
-        if other.location == person.location:
-
-            possible_targets.append(other)
-
-    if not possible_targets:
-        return None
-
-    # For now we use familiarity + personality.
-    # This will become much more sophisticated later.
-    weighted_targets = []
-
-    for other in possible_targets:
-
-        relationship = person.get_relationship(
-            other
-        )
-
-        familiarity = (
-            relationship.familiarity
-        )
-
-        weight = 1 + familiarity
-
-        weighted_targets.append(
-            (other, weight)
-        )
-
-    total_weight = sum(
-        weight
-        for _, weight
-        in weighted_targets
-    )
-
-    roll = random.uniform(
-        0,
-        total_weight
-    )
-
-    current = 0
-
-    for other, weight in weighted_targets:
-
-        current += weight
-
-        if roll <= current:
-            return other
-
-    return possible_targets[-1]
-
-
-def social_interaction(
-    person,
+def perform_interaction(
+    actor,
     target,
+    interaction_type,
     world
 ):
 
-    relationship = person.get_relationship(
-        target
+    relationship = actor.get_relationship(target)
+
+    interaction = Interaction(
+        actor=actor,
+        target=target,
+        interaction_type=interaction_type
     )
 
-    # ---------------------------------
-    # FAMILIARITY
-    # ---------------------------------
+    # ==========================================
+    # GREETING
+    # ==========================================
 
-    relationship.familiarity += 1
+    if interaction_type == "greet":
 
-    # ---------------------------------
-    # PERSONALITY EFFECTS
-    # ---------------------------------
+        relationship.familiarity[actor] = min(
+            1.0,
+            relationship.familiarity[actor] + 0.02
+        )
 
-    # Extraverted people generally enjoy
-    # interaction more.
-    affection_change = (
-        (person.extraversion - 50)
-        / 100
+        relationship.familiarity[target] = min(
+            1.0,
+            relationship.familiarity[target] + 0.02
+        )
+
+        interaction.description = (
+            f"{actor.full_name} greeted "
+            f"{target.full_name}."
+        )
+
+    # ==========================================
+    # COMPLIMENT
+    # ==========================================
+
+    elif interaction_type == "compliment":
+
+        relationship.affection[actor] += 0.03
+        relationship.affection[target] += 0.01
+
+        interaction.description = (
+            f"{actor.full_name} complimented "
+            f"{target.full_name}."
+        )
+
+    # ==========================================
+    # INSULT
+    # ==========================================
+
+    elif interaction_type == "insult":
+
+        relationship.resentment[target] += 0.08
+
+        relationship.affection[target] -= 0.05
+
+        interaction.description = (
+            f"{actor.full_name} insulted "
+            f"{target.full_name}."
+        )
+
+    # ==========================================
+    # HELP
+    # ==========================================
+
+    elif interaction_type == "help":
+
+        relationship.trust[target] += 0.05
+        relationship.affection[target] += 0.03
+
+        interaction.description = (
+            f"{actor.full_name} helped "
+            f"{target.full_name}."
+        )
+
+    # ==========================================
+    # THREATEN
+    # ==========================================
+
+    elif interaction_type == "threaten":
+
+        relationship.fear[target] += 0.10
+        relationship.resentment[target] += 0.05
+
+        interaction.description = (
+            f"{actor.full_name} threatened "
+            f"{target.full_name}."
+        )
+
+    # ==========================================
+    # HISTORY
+    # ==========================================
+
+    relationship.add_history(
+        interaction
     )
 
-    respect_change = (
-        (person.conscientiousness - 50)
-        / 200
-    )
-
-    # ---------------------------------
-    # APPLY RELATIONSHIP CHANGES
-    # ---------------------------------
-
-    relationship.affection_a_to_b += (
-        affection_change
-    )
-
-    relationship.respect_a_to_b += (
-        respect_change
-    )
-
-    # ---------------------------------
+    # ==========================================
     # MEMORY
-    # ---------------------------------
+    # ==========================================
 
-    memory = {
-        "type": "social_interaction",
-        "year": world.year,
-        "month": world.month,
-        "day": world.day,
-        "hour": world.hour,
-        "other": target.name,
-        "description": (
-            f"Met {target.name} "
-            f"and had a conversation."
-        )
-    }
+    actor.remember({
+        "type": "interaction",
+        "other": target,
+        "description": interaction.description
+    })
 
-    person.remember(memory)
+    target.remember({
+        "type": "interaction",
+        "other": actor,
+        "description": interaction.description
+    })
 
-    # The other person remembers it too.
-    other_memory = {
-        "type": "social_interaction",
-        "year": world.year,
-        "month": world.month,
-        "day": world.day,
-        "hour": world.hour,
-        "other": person.name,
-        "description": (
-            f"Met {person.name} "
-            f"and had a conversation."
-        )
-    }
-
-    target.remember(other_memory)
-
-    return (
-        f"{person.name} talked with "
-        f"{target.name}."
-    )
+    return interaction

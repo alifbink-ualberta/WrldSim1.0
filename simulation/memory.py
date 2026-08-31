@@ -1,17 +1,31 @@
-from dataclasses import dataclass
+# simulation/memory.py
 
 
-@dataclass
 class Memory:
 
-    year: int
-    description: str
+    def __init__(
+        self,
+        person,
+        experience,
+        emotional_significance=0.5
+    ):
 
-    emotional_weight: int = 50
+        self.person = person
+        self.experience = experience
 
-    def __str__(self):
-
-        return (
-            f"Year {self.year}: "
-            f"{self.description}"
+        # How important this memory is
+        self.emotional_significance = (
+            emotional_significance
         )
+
+        # How accurately it is currently remembered
+        self.accuracy = 1.0
+
+        # Number of times this memory has been recalled
+        self.recall_count = 0
+
+    def recall(self):
+
+        self.recall_count += 1
+
+        return self.experience.description

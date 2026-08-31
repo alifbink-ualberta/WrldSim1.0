@@ -5,6 +5,8 @@ from simulation.personality import Personality
 from simulation.body import Body
 from simulation.survival import SurvivalState
 from simulation.family import Family
+from simulation.emotion import EmotionalState
+
 
 
 class Person:
@@ -57,6 +59,8 @@ class Person:
             if personality is not None
             else Personality()
         )
+
+        self.emotions = EmotionalState()
 
         # =========================
         # MIND
@@ -112,9 +116,33 @@ class Person:
     # MEMORY
     # ==================================================
 
-    def remember(self, memory):
+    def remember(
+        self,
+        experience,
+        emotional_significance=None
+    ):
 
-        self.memories.append(memory)
+        from simulation.memory import Memory
+
+        if emotional_significance is None:
+
+            emotional_significance = (
+                experience.intensity
+            )
+
+        memory = Memory(
+            person=self,
+            experience=experience,
+            emotional_significance=(
+                emotional_significance
+            )
+        )
+
+        self.memories.append(
+            memory
+        )
+
+        return memory
 
     # ==================================================
     # RELATIONSHIPS

@@ -1,29 +1,54 @@
-from dataclasses import dataclass, field
+# simulation/event.py
 
 
-@dataclass
 class Event:
 
-    year: int
-    month: int
-    day: int
+    def __init__(
+        self,
+        world,
+        event_type,
+        description="",
+        participants=None,
+        location=None,
+        significance=0.0
+    ):
 
-    description: str
+        self.world = world
 
-    participants: list[str] = field(
-        default_factory=list
-    )
+        # =========================
+        # IDENTITY
+        # =========================
 
-    location: str = ""
+        self.event_type = event_type
+        self.description = description
 
-    importance: int = 50
+        # =========================
+        # PARTICIPANTS
+        # =========================
 
-    def __str__(self):
-
-        date = (
-            f"Year {self.year}, "
-            f"Month {self.month}, "
-            f"Day {self.day}"
+        self.participants = (
+            participants
+            if participants is not None
+            else []
         )
 
-        return f"[{date}] {self.description}"
+        # =========================
+        # LOCATION
+        # =========================
+
+        self.location = location
+
+        # =========================
+        # SIGNIFICANCE
+        # =========================
+
+        self.significance = significance
+
+        # =========================
+        # TIME
+        # =========================
+
+        self.year = world.year
+        self.month = world.month
+        self.day = world.day
+        self.hour = world.hour
