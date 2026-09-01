@@ -226,10 +226,6 @@ class ActionResolver:
         world
     ):
 
-        # ==========================================
-        # DEAD PEOPLE CANNOT ACT
-        # ==========================================
-
         if not person.is_alive:
 
             return (
@@ -238,10 +234,6 @@ class ActionResolver:
                 f"{person.full_name} "
                 f"is dead and cannot act."
             )
-
-        # ==========================================
-        # FIND HANDLER
-        # ==========================================
 
         handler = self.handlers.get(
             action.action_type
@@ -257,10 +249,6 @@ class ActionResolver:
                 f"{action.action_type}."
             )
 
-        # ==========================================
-        # FIND OUTCOME SYSTEM
-        # ==========================================
-
         outcome_system = (
             self.outcomes.get(
                 action.action_type
@@ -271,15 +259,15 @@ class ActionResolver:
 
             outcome_system = OutcomeSystem()
 
-        # ==========================================
-        # RESOLVE OUTCOME
-        # ==========================================
-
         outcome = outcome_system.resolve(
             person,
             action,
             world
         )
+
+        # ==========================================
+        # FAILURE
+        # ==========================================
 
         if not outcome.success:
 
@@ -292,7 +280,7 @@ class ActionResolver:
             )
 
         # ==========================================
-        # EXECUTE ACTION
+        # ACTION HANDLER
         # ==========================================
 
         result = handler.execute(
@@ -303,31 +291,17 @@ class ActionResolver:
         )
 
         # ==========================================
-        # APPLY CONSEQUENCES
+        # CONSEQUENCES
         # ==========================================
 
-        event = getattr(
-            result,
-            "event",
-            None
-        )
-
-        if event is not None:
-
-            target = action.target
-
-            consequences = (
-                ConsequenceSystem.apply(
-                    person,
-                    target,
-                    event,
-                    world
-                )
+        consequences = (
+            ConsequenceSystem.resolve(
+                person,
+                action,
+                outcome,
+                world
             )
-
-        else:
-
-            consequences = []
+        )
 
         # ==========================================
         # RETURN
@@ -335,6 +309,9 @@ class ActionResolver:
 
         return (
             outcome,
-            result,
-            result.message
+            {
+                "result": result,
+                "consequences": consequences
+            },
+            result
         )

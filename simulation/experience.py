@@ -5,30 +5,63 @@ class Experience:
 
     def __init__(
         self,
-        category,
+        subject,
+        experience_type,
         description,
-        duration_minutes=0,
         intensity=0.5,
-        source=None
+        source=None,
+        target=None,
+        data=None
     ):
 
-        self.category = category
+        # ==========================================
+        # PARTICIPANT
+        # ==========================================
+
+        self.subject = subject
+
+        # ==========================================
+        # TYPE
+        # ==========================================
+
+        self.experience_type = experience_type
+
+        # Human-readable description.
         self.description = description
 
-        self.duration_minutes = duration_minutes
-
-        # How strongly this experience affects
-        # the person's development.
-        #
-        # 0.0 = almost meaningless
-        # 1.0 = extremely significant
+        # 0.0 - 1.0
         self.intensity = max(
             0.0,
             min(1.0, intensity)
         )
 
+        # ==========================================
+        # CONTEXT
+        # ==========================================
+
         self.source = source
+        self.target = target
+
+        self.data = (
+            data
+            if data is not None
+            else {}
+        )
+
+        # ==========================================
+        # STATE
+        # ==========================================
+
+        self.processed = False
+
+    # ==============================================
+    # DEBUGGING
+    # ==============================================
 
     def __str__(self):
 
-        return self.description
+        return (
+            f"{self.subject.full_name} "
+            f"experienced: "
+            f"{self.description}"
+        )
