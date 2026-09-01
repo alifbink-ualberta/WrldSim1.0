@@ -5,25 +5,17 @@ class Event:
 
     def __init__(
         self,
-        name,
-        description="",
-        event_type="generic",
+        event_type,
+        description,
         participants=None,
-        location=None,
-        cause=None
+        actor=None,
+        target=None,
+        significance=0.5
     ):
 
-        # ==========================================
-        # IDENTITY
-        # ==========================================
-
-        self.name = name
-        self.description = description
         self.event_type = event_type
 
-        # ==========================================
-        # PARTICIPANTS
-        # ==========================================
+        self.description = description
 
         self.participants = (
             participants
@@ -31,85 +23,74 @@ class Event:
             else []
         )
 
-        # ==========================================
-        # OBSERVERS
-        # ==========================================
+        self.actor = actor
+        self.target = target
 
-        self.observers = []
+        # 0.0 - 1.0
+        self.significance = max(
+            0.0,
+            min(1.0, significance)
+        )
 
-        # ==========================================
-        # LOCATION
-        # ==========================================
-
-        self.location = location
-
-        # ==========================================
-        # CAUSE
-        # ==========================================
-
-        self.cause = cause
-
-        # ==========================================
-        # WORLD TIME
-        # ==========================================
-
-        self.year = None
-        self.month = None
-        self.day = None
-        self.hour = None
-        self.minute = None
-
-        # ==========================================
-        # STATE
-        # ==========================================
-
+        # Filled in when the world processes it.
         self.resolved = False
 
-    # ==============================================
+        # Interpretations created by observers.
+        self.interpretations = []
+
+        # Memories created from this event.
+        self.memories = []
+
+    # ==================================================
     # PARTICIPANTS
-    # ==============================================
+    # ==================================================
 
     def add_participant(self, person):
 
         if person not in self.participants:
 
-            self.participants.append(person)
+            self.participants.append(
+                person
+            )
 
+    # ==================================================
+    # INTERPRETATION
+    # ==================================================
 
-    # ==============================================
-    # OBSERVERS
-    # ==============================================
+    def add_interpretation(
+        self,
+        interpretation
+    ):
 
-    def add_observer(self, person):
+        self.interpretations.append(
+            interpretation
+        )
 
-        if person not in self.observers:
+    # ==================================================
+    # MEMORY
+    # ==================================================
 
-            self.observers.append(person)
+    def add_memory(
+        self,
+        memory
+    ):
 
-    # ==============================================
-    # TIMESTAMP
-    # ==============================================
+        self.memories.append(
+            memory
+        )
 
-    def set_time(self, world):
-
-        self.year = world.year
-        self.month = world.month
-        self.day = world.day
-        self.hour = world.hour
-        self.minute = world.minute
-
-    # ==============================================
+    # ==================================================
     # RESOLUTION
-    # ==============================================
+    # ==================================================
 
     def resolve(self):
 
         self.resolved = True
 
-    # ==============================================
+    # ==================================================
     # DEBUGGING
-    # ==============================================
+    # ==================================================
 
     def __str__(self):
 
-        return self.name
+        return self.description

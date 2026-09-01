@@ -16,6 +16,18 @@ class Relationship:
 
         # ==========================================
         # FEELINGS
+        #
+        # All continuous relationship values use
+        # the standardized range:
+        #
+        # -1.0 = maximally negative
+        #  0.0 = neutral
+        # +1.0 = maximally positive
+        #
+        # Exception:
+        # fear and familiarity are still represented
+        # on the same numerical range, with 0.0
+        # meaning absence / neutrality.
         # ==========================================
 
         self.affection = {
@@ -65,7 +77,9 @@ class Relationship:
 
     def add_history(self, interaction):
 
-        self.history.append(interaction)
+        self.history.append(
+            interaction
+        )
 
     # ==================================================
     # GET FEELINGS
@@ -84,25 +98,17 @@ class Relationship:
         }
 
     # ==================================================
-    # VALUE MODIFICATION
+    # CHANGE FEELING
     # ==================================================
 
     def change_feeling(
         self,
-        feeling,
         person,
+        feeling,
         amount
     ):
 
-        if feeling not in [
-            "affection",
-            "trust",
-            "respect",
-            "fear",
-            "resentment",
-            "attraction",
-            "familiarity"
-        ]:
+        if not hasattr(self, feeling):
             return False
 
         values = getattr(
@@ -110,11 +116,46 @@ class Relationship:
             feeling
         )
 
+        if person not in values:
+            return False
+
         values[person] = max(
             -1.0,
             min(
                 1.0,
                 values[person] + amount
+            )
+        )
+
+        return True
+
+    # ==================================================
+    # SET FEELING
+    # ==================================================
+
+    def set_feeling(
+        self,
+        person,
+        feeling,
+        value
+    ):
+
+        if not hasattr(self, feeling):
+            return False
+
+        values = getattr(
+            self,
+            feeling
+        )
+
+        if person not in values:
+            return False
+
+        values[person] = max(
+            -1.0,
+            min(
+                1.0,
+                value
             )
         )
 

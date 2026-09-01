@@ -11,13 +11,15 @@ from simulation.action_outcome import ActionOutcome
 
 def choose_action(person, world):
 
+    if not person.is_alive:
+        return None, 0.0
+
     opportunities = generate_possible_actions(
         person,
         world
     )
 
     if not opportunities:
-
         return None, 0.0
 
     best_action = None
@@ -47,7 +49,7 @@ def choose_action(person, world):
 
 
 # ==================================================
-# GENERATE POSSIBLE ACTIONS
+# GENERATE ACTIONS
 # ==================================================
 
 def generate_possible_actions(
@@ -92,39 +94,37 @@ def predict_action(
 
     action_type = action.action_type
 
-    # ==========================================
-    # EAT
-    # ==========================================
-
     if action_type == "eat":
 
         return ActionOutcome(
             action,
             effects={
-                "survival": 0.8,
+                "hunger": -0.8,
                 "energy": 0.1
             },
             risk=0.0
         )
 
-    # ==========================================
-    # SLEEP
-    # ==========================================
+    if action_type == "drink":
+
+        return ActionOutcome(
+            action,
+            effects={
+                "thirst": -0.8
+            },
+            risk=0.0
+        )
 
     if action_type == "sleep":
 
         return ActionOutcome(
             action,
             effects={
-                "survival": 0.8,
-                "energy": 1.0
+                "energy": 0.8,
+                "sleep": 0.8
             },
             risk=0.0
         )
-
-    # ==========================================
-    # WORK
-    # ==========================================
 
     if action_type == "work":
 
@@ -139,10 +139,6 @@ def predict_action(
             risk=0.05
         )
 
-    # ==========================================
-    # PRACTICE
-    # ==========================================
-
     if action_type == "practice":
 
         return ActionOutcome(
@@ -154,10 +150,6 @@ def predict_action(
             },
             risk=0.05
         )
-
-    # ==========================================
-    # SOCIALIZE
-    # ==========================================
 
     if action_type == "socialize":
 
@@ -171,9 +163,38 @@ def predict_action(
             risk=0.05
         )
 
-    # ==========================================
-    # EXPLORE
-    # ==========================================
+    if action_type == "visit":
+
+        return ActionOutcome(
+            action,
+            effects={
+                "relationships": 0.9,
+                "social_connection": 0.7
+            },
+            risk=0.02
+        )
+
+    if action_type == "confront":
+
+        return ActionOutcome(
+            action,
+            effects={
+                "resentment": -0.1,
+                "status": 0.3,
+                "autonomy": 0.3
+            },
+            risk=0.35
+        )
+
+    if action_type == "avoid":
+
+        return ActionOutcome(
+            action,
+            effects={
+                "safety": 0.5
+            },
+            risk=0.0
+        )
 
     if action_type == "explore":
 
@@ -187,16 +208,11 @@ def predict_action(
             risk=0.4
         )
 
-    # ==========================================
-    # UNKNOWN
-    # ==========================================
+    return ActionOutcome(action)
 
-    return ActionOutcome(
-        action
-    )
 
 # ==================================================
-# CIRCUMSTANCE EFFECT
+# CIRCUMSTANCES
 # ==================================================
 
 def circumstance_effect(
@@ -207,41 +223,53 @@ def circumstance_effect(
 
     score = 0.0
 
-    # ==========================================
-    # WORLD CIRCUMSTANCES
-    # ==========================================
+    # ------------------------------------------
+    # WORLD
+    # ------------------------------------------
 
-    for circumstance in world.circumstances:
+    for circumstance in getattr(
+        world,
+        "circumstances",
+        []
+    ):
 
-        effects = circumstance.effects
-
-        key = (
-            f"{action.action_type}"
+        score += circumstance.get_effect(
+            action.action_type
         )
 
-        score += effects.get(
-            key,
-            0.0
-        )
+    # ------------------------------------------
+    # PERSONAL
+    # ------------------------------------------
 
-    # ==========================================
-    # PERSONAL CIRCUMSTANCES
-    # ==========================================
+    for circumstance in getattr(
+        person,
+        "circumstances",
+        []
+    ):
 
-    for circumstance in person.circumstances:
-
-        effects = circumstance.effects
-
-        key = (
-            f"{action.action_type}"
-        )
-
-        score += effects.get(
-            key,
-            0.0
+        score += circumstance.get_effect(
+            action.action_type
         )
 
     return score
+
+
+# ==================================================
+# MOTIVATION HELPER
+# ==================================================
+
+def motivation_strength(
+    person,
+    name
+):
+
+    for motivation in person.motivations:
+
+        if motivation.name == name:
+
+            return motivation.strength
+
+    return 0.0
 
 
 # ==================================================
@@ -257,6 +285,34 @@ def evaluate_action(
 
     score = 0.0
 
+    survival = person.survival
+    personality = person.personality
+
+    # ==========================================
+    # SURVIVAL PRESSURE
+    # ==========================================
+
+    if action.action_type == "eat":
+
+        score += (
+            survival.hunger
+            * 8
+        )
+
+    if action.action_type == "drink":
+
+        score += (
+            survival.thirst
+            * 8
+        )
+
+    if action.action_type == "sleep":
+
+        score += (
+            (1.0 - survival.energy)
+            * 8
+        )
+
     # ==========================================
     # GOALS
     # ==========================================
@@ -266,7 +322,11 @@ def evaluate_action(
         if goal.completed:
             continue
 
-        if goal.abandoned:
+        if getattr(
+            goal,
+            "failed",
+            False
+        ):
             continue
 
         for effect_name, effect_value in (
@@ -289,83 +349,121 @@ def evaluate_action(
     # MOTIVATIONS
     # ==========================================
 
-    motivations = person.motivations
-
     if action.action_type == "socialize":
 
         score += (
-            motivations[
+            motivation_strength(
+                person,
                 "social_connection"
-            ].strength
-            * 2
+            )
+            * 2.0
+        )
+
+    if action.action_type == "visit":
+
+        score += (
+            motivation_strength(
+                person,
+                "social_connection"
+            )
+            * 2.5
         )
 
     if action.action_type == "explore":
 
         score += (
-            motivations[
-                "autonomy"
-            ].strength
-            * 2
+            motivation_strength(
+                person,
+                "exploration"
+            )
+            * 2.0
         )
 
         score += (
-            motivations[
+            motivation_strength(
+                person,
                 "knowledge"
-            ].strength
-            * 2
+            )
+            * 2.0
         )
 
     if action.action_type == "practice":
 
         score += (
-            motivations[
+            motivation_strength(
+                person,
                 "achievement"
-            ].strength
-            * 2
+            )
+            * 2.0
         )
 
         score += (
-            motivations[
+            motivation_strength(
+                person,
                 "knowledge"
-            ].strength
-            * 1.5
+            )
+            * 1.0
         )
 
     if action.action_type == "work":
 
         score += (
-            motivations[
+            motivation_strength(
+                person,
                 "security"
-            ].strength
-            * 2
+            )
+            * 2.0
+        )
+
+        score += (
+            motivation_strength(
+                person,
+                "achievement"
+            )
+            * 0.5
+        )
+
+    if action.action_type == "confront":
+
+        score += (
+            motivation_strength(
+                person,
+                "power"
+            )
+            * 1.5
+        )
+
+        score += (
+            motivation_strength(
+                person,
+                "autonomy"
+            )
+            * 1.0
         )
 
     # ==========================================
     # PERSONALITY
     # ==========================================
 
-    personality = person.personality
-
     if action.action_type == "explore":
 
         score += (
             personality.openness
-            * 2
+            * 2.0
         )
 
     if action.action_type == "socialize":
 
         score += (
             personality.extraversion
-            * 2
+            * 2.0
         )
 
     if action.action_type == "work":
 
         score += (
             personality.conscientiousness
-            * 2
+            * 2.0
         )
 
     if action.action_type == "practice":
@@ -375,13 +473,31 @@ def evaluate_action(
             * 1.5
         )
 
+    if action.action_type == "confront":
+
+        score += (
+            personality.narcissism
+            * 0.8
+        )
+
+        score += (
+            personality.machiavellianism
+            * 0.5
+        )
+
     # ==========================================
-    # RELATIONSHIPS
+    # SOCIAL RELATIONSHIPS
     # ==========================================
 
     if (
-        action.action_type == "socialize"
-        and action.target is not None
+        action.target is not None
+        and action.action_type
+        in (
+            "socialize",
+            "visit",
+            "confront",
+            "avoid"
+        )
     ):
 
         relationship = (
@@ -394,30 +510,81 @@ def evaluate_action(
             person
         )
 
+        # All relationship values are now
+        # standardized to -1.0 → +1.0.
+
         score += (
             feelings["affection"]
-            * 0.01
+            * 2.0
         )
 
         score += (
             feelings["familiarity"]
-            * 0.01
+            * 0.5
         )
 
         score += (
             feelings["trust"]
-            * 0.01
+            * 1.5
         )
 
         score -= (
             feelings["resentment"]
-            * 0.01
+            * 2.0
         )
 
         score -= (
             feelings["fear"]
-            * 0.01
+            * 2.0
         )
+
+        # --------------------------------------
+        # VISIT
+        # --------------------------------------
+
+        if action.action_type == "visit":
+
+            score += (
+                feelings["affection"]
+                * 2.0
+            )
+
+            score += (
+                feelings["trust"]
+                * 1.0
+            )
+
+        # --------------------------------------
+        # CONFRONT
+        # --------------------------------------
+
+        if action.action_type == "confront":
+
+            score += (
+                feelings["resentment"]
+                * 3.0
+            )
+
+            score += (
+                feelings["fear"]
+                * 0.5
+            )
+
+        # --------------------------------------
+        # AVOID
+        # --------------------------------------
+
+        if action.action_type == "avoid":
+
+            score += (
+                feelings["fear"]
+                * 4.0
+            )
+
+            score += (
+                feelings["resentment"]
+                * 2.0
+            )
 
     # ==========================================
     # RISK
@@ -426,7 +593,7 @@ def evaluate_action(
     score -= (
         outcome.risk
         * personality.neuroticism
-        * 3
+        * 3.0
     )
 
     score += (

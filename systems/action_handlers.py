@@ -1,6 +1,14 @@
 # systems/action_handlers.py
 
 
+from simulation.event import Event
+from simulation.action_result import ActionResult
+
+
+# ==================================================
+# BASE HANDLER
+# ==================================================
+
 class ActionHandler:
 
     def execute(
@@ -14,6 +22,10 @@ class ActionHandler:
         raise NotImplementedError
 
 
+# ==================================================
+# EAT
+# ==================================================
+
 class EatHandler(ActionHandler):
 
     def execute(
@@ -24,37 +36,69 @@ class EatHandler(ActionHandler):
         outcome
     ):
 
-        item = (
-            "food"
-            if person.has_item("food")
-            else "meat"
-        )
+        # ------------------------------------------
+        # Find food
+        # ------------------------------------------
 
-        if not person.has_item(item):
+        if not person.inventory:
 
-            return (
-                f"{person.name} has no food."
+            event = Event(
+                name="Eating",
+                description=(
+                    f"{person.full_name} "
+                    f"attempted to eat."
+                ),
+                event_type="eat",
+                participants=[person],
+                location=person.location
             )
 
+            return ActionResult(
+                event=event,
+                message=(
+                    f"{person.full_name} "
+                    f"has nothing to eat."
+                )
+            )
+
+        # ------------------------------------------
+        # Consume first available item
+        # ------------------------------------------
+
+        item = next(
+            iter(person.inventory)
+        )
+
         person.remove_item(
-            item,
-            1
+            item
         )
 
-        person.hunger = max(
-            0,
-            person.hunger - 50
+        event = Event(
+            name="Eating",
+            description=(
+                f"{person.full_name} "
+                f"ate {item}."
+            ),
+            event_type="eat",
+            participants=[person],
+            location=person.location
         )
 
-        person.energy = max(
-            0,
-            person.energy - 2
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"ate {item}."
+            ),
+            data={
+                "item": item
+            }
         )
 
-        return (
-            f"{person.name} ate {item}."
-        )
 
+# ==================================================
+# SLEEP
+# ==================================================
 
 class SleepHandler(ActionHandler):
 
@@ -66,15 +110,29 @@ class SleepHandler(ActionHandler):
         outcome
     ):
 
-        person.energy = min(
-            100,
-            person.energy + 60
+        event = Event(
+            name="Sleeping",
+            description=(
+                f"{person.full_name} "
+                f"went to sleep."
+            ),
+            event_type="sleep",
+            participants=[person],
+            location=person.location
         )
 
-        return (
-            f"{person.name} slept."
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"went to sleep."
+            )
         )
 
+
+# ==================================================
+# WORK
+# ==================================================
 
 class WorkHandler(ActionHandler):
 
@@ -86,55 +144,40 @@ class WorkHandler(ActionHandler):
         outcome
     ):
 
-        person.energy = max(
-            0,
-            person.energy - 10
+        earnings = 10
+
+        person.earn_money(
+            earnings
         )
 
-        person.hunger = min(
-            100,
-            person.hunger + 4
+        event = Event(
+            name="Working",
+            description=(
+                f"{person.full_name} "
+                f"worked and earned "
+                f"{earnings} money."
+            ),
+            event_type="work",
+            participants=[person],
+            location=person.location
         )
 
-        production = {
-            "Farmer": ("food", 3),
-            "Hunter": ("meat", 2),
-            "Blacksmith": ("tools", 1),
-        }
-
-        result = production.get(
-            person.occupation
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"worked and earned "
+                f"{earnings}."
+            ),
+            data={
+                "earnings": earnings
+            }
         )
 
-        if result:
 
-            item, amount = result
-
-            person.add_item(
-                item,
-                amount
-            )
-
-            return (
-                f"{person.name} worked as "
-                f"a {person.occupation} "
-                f"and produced "
-                f"{amount} {item}."
-            )
-
-        if person.occupation == "Merchant":
-
-            person.earn_money(5)
-
-            return (
-                f"{person.name} conducted "
-                f"business and earned 5 money."
-            )
-
-        return (
-            f"{person.name} worked."
-        )
-
+# ==================================================
+# PRACTICE
+# ==================================================
 
 class PracticeHandler(ActionHandler):
 
@@ -146,21 +189,39 @@ class PracticeHandler(ActionHandler):
         outcome
     ):
 
-        person.energy = max(
-            0,
-            person.energy - 8
+        skill_name = "general"
+
+        person.gain_skill_experience(
+            skill_name,
+            1.0
         )
 
-        person.hunger = min(
-            100,
-            person.hunger + 2
+        event = Event(
+            name="Practice",
+            description=(
+                f"{person.full_name} "
+                f"practiced {skill_name}."
+            ),
+            event_type="practice",
+            participants=[person],
+            location=person.location
         )
 
-        return (
-            f"{person.name} practiced "
-            f"their skills."
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"practiced."
+            ),
+            data={
+                "skill": skill_name
+            }
         )
 
+
+# ==================================================
+# EXPLORE
+# ==================================================
 
 class ExploreHandler(ActionHandler):
 
@@ -172,20 +233,29 @@ class ExploreHandler(ActionHandler):
         outcome
     ):
 
-        person.energy = max(
-            0,
-            person.energy - 8
+        event = Event(
+            name="Exploration",
+            description=(
+                f"{person.full_name} "
+                f"explored the world."
+            ),
+            event_type="explore",
+            participants=[person],
+            location=person.location
         )
 
-        person.hunger = min(
-            100,
-            person.hunger + 3
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"explored."
+            )
         )
 
-        return (
-            f"{person.name} explored."
-        )
 
+# ==================================================
+# SOCIALIZE
+# ==================================================
 
 class SocializeHandler(ActionHandler):
 
@@ -197,31 +267,284 @@ class SocializeHandler(ActionHandler):
         outcome
     ):
 
-        from systems.social import (
-            social_interaction
-        )
-
         target = action.target
 
         if target is None:
 
-            return (
-                f"{person.name} found "
-                f"nobody to socialize with."
+            event = Event(
+                name="Social Interaction",
+                description=(
+                    f"{person.full_name} "
+                    f"attempted to socialize."
+                ),
+                event_type="socialize",
+                participants=[person],
+                location=person.location
             )
 
-        person.energy = max(
-            0,
-            person.energy - 4
+            return ActionResult(
+                event=event,
+                message=(
+                    f"{person.full_name} "
+                    f"had nobody to socialize with."
+                )
+            )
+
+        # ------------------------------------------
+        # Interaction event
+        # ------------------------------------------
+
+        event = Event(
+            name="Social Interaction",
+            description=(
+                f"{person.full_name} "
+                f"interacted with "
+                f"{target.full_name}."
+            ),
+            event_type="socialize",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
         )
 
-        return social_interaction(
-            person,
-            target,
-            world,
-            outcome
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"socialized with "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
         )
 
+
+# ==================================================
+# TALK
+# ==================================================
+
+class TalkHandler(ActionHandler):
+
+    def execute(
+        self,
+        person,
+        action,
+        world,
+        outcome
+    ):
+
+        target = action.target
+
+        event = Event(
+            name="Conversation",
+            description=(
+                f"{person.full_name} "
+                f"talked with "
+                f"{target.full_name}."
+            ),
+            event_type="talk",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
+        )
+
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"talked with "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
+        )
+
+
+# ==================================================
+# HELP
+# ==================================================
+
+class HelpHandler(ActionHandler):
+
+    def execute(
+        self,
+        person,
+        action,
+        world,
+        outcome
+    ):
+
+        target = action.target
+
+        event = Event(
+            name="Helping Someone",
+            description=(
+                f"{person.full_name} "
+                f"helped "
+                f"{target.full_name}."
+            ),
+            event_type="help",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
+        )
+
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"helped "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
+        )
+
+
+# ==================================================
+# COMPLIMENT
+# ==================================================
+
+class ComplimentHandler(ActionHandler):
+
+    def execute(
+        self,
+        person,
+        action,
+        world,
+        outcome
+    ):
+
+        target = action.target
+
+        event = Event(
+            name="Compliment",
+            description=(
+                f"{person.full_name} "
+                f"complimented "
+                f"{target.full_name}."
+            ),
+            event_type="compliment",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
+        )
+
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"complimented "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
+        )
+
+
+# ==================================================
+# INSULT
+# ==================================================
+
+class InsultHandler(ActionHandler):
+
+    def execute(
+        self,
+        person,
+        action,
+        world,
+        outcome
+    ):
+
+        target = action.target
+
+        event = Event(
+            name="Insult",
+            description=(
+                f"{person.full_name} "
+                f"insulted "
+                f"{target.full_name}."
+            ),
+            event_type="insult",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
+        )
+
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"insulted "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
+        )
+
+
+# ==================================================
+# THREAT
+# ==================================================
+
+class ThreatHandler(ActionHandler):
+
+    def execute(
+        self,
+        person,
+        action,
+        world,
+        outcome
+    ):
+
+        target = action.target
+
+        event = Event(
+            name="Threat",
+            description=(
+                f"{person.full_name} "
+                f"threatened "
+                f"{target.full_name}."
+            ),
+            event_type="threat",
+            participants=[
+                person,
+                target
+            ],
+            location=person.location
+        )
+
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"threatened "
+                f"{target.full_name}."
+            ),
+            data={
+                "target": target
+            }
+        )
+
+
+# ==================================================
+# BUY
+# ==================================================
 
 class BuyHandler(ActionHandler):
 
@@ -233,70 +556,66 @@ class BuyHandler(ActionHandler):
         outcome
     ):
 
-        seller = action.target
+        item = action.target
 
-        if seller is None:
+        price = 10
 
-            return (
-                f"{person.name} "
-                f"could not buy anything."
-            )
-
-        total_price = (
-            action.price
-            * action.amount
-        )
-
-        if person.money < total_price:
-
-            return (
-                f"{person.name} "
-                f"cannot afford "
-                f"{action.item}."
-            )
-
-        if not seller.has_item(
-            action.item,
-            action.amount
+        if not person.spend_money(
+            price
         ):
 
-            return (
-                f"{seller.name} "
-                f"does not have "
-                f"{action.item}."
+            event = Event(
+                name="Purchase Attempt",
+                description=(
+                    f"{person.full_name} "
+                    f"could not afford "
+                    f"{item}."
+                ),
+                event_type="buy",
+                participants=[person],
+                location=person.location
             )
 
-        seller.remove_item(
-            action.item,
-            action.amount
-        )
+            return ActionResult(
+                event=event,
+                message=(
+                    f"{person.full_name} "
+                    f"could not afford "
+                    f"{item}."
+                )
+            )
 
         person.add_item(
-            action.item,
-            action.amount
+            item
         )
 
-        person.spend_money(
-            total_price
+        event = Event(
+            name="Purchase",
+            description=(
+                f"{person.full_name} "
+                f"bought {item}."
+            ),
+            event_type="buy",
+            participants=[person],
+            location=person.location
         )
 
-        seller.earn_money(
-            total_price
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"bought {item}."
+            ),
+            data={
+                "item": item,
+                "price": price
+            }
         )
 
-        person.change_relationship(
-            seller,
-            2
-        )
 
-        return (
-            f"{person.name} bought "
-            f"{action.amount} "
-            f"{action.item} from "
-            f"{seller.name} for "
-            f"{total_price}."
-        )
-
+# ==================================================
+# SELL
+# ==================================================
 
 class SellHandler(ActionHandler):
 
@@ -308,66 +627,62 @@ class SellHandler(ActionHandler):
         outcome
     ):
 
-        buyer = action.target
-
-        if buyer is None:
-
-            return (
-                f"{person.name} "
-                f"could not sell anything."
-            )
-
-        total_price = (
-            action.price
-            * action.amount
-        )
+        item = action.target
 
         if not person.has_item(
-            action.item,
-            action.amount
+            item
         ):
 
-            return (
-                f"{person.name} "
-                f"does not have "
-                f"{action.item}."
+            event = Event(
+                name="Sale Attempt",
+                description=(
+                    f"{person.full_name} "
+                    f"does not have "
+                    f"{item} to sell."
+                ),
+                event_type="sell",
+                participants=[person],
+                location=person.location
             )
 
-        if buyer.money < total_price:
-
-            return (
-                f"{buyer.name} "
-                f"cannot afford "
-                f"{action.item}."
+            return ActionResult(
+                event=event,
+                message=(
+                    f"{person.full_name} "
+                    f"does not have "
+                    f"{item} to sell."
+                )
             )
 
         person.remove_item(
-            action.item,
-            action.amount
+            item
         )
 
-        buyer.add_item(
-            action.item,
-            action.amount
-        )
+        earnings = 5
 
         person.earn_money(
-            total_price
+            earnings
         )
 
-        buyer.spend_money(
-            total_price
+        event = Event(
+            name="Sale",
+            description=(
+                f"{person.full_name} "
+                f"sold {item}."
+            ),
+            event_type="sell",
+            participants=[person],
+            location=person.location
         )
 
-        person.change_relationship(
-            buyer,
-            2
-        )
-
-        return (
-            f"{person.name} sold "
-            f"{action.amount} "
-            f"{action.item} to "
-            f"{buyer.name} for "
-            f"{total_price}."
+        return ActionResult(
+            event=event,
+            message=(
+                f"{person.full_name} "
+                f"sold {item}."
+            ),
+            data={
+                "item": item,
+                "earnings": earnings
+            }
         )

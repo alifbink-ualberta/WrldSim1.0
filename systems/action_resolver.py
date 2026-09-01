@@ -17,8 +17,15 @@ from systems.action_handlers import (
     ExploreHandler,
     SocializeHandler,
     BuyHandler,
-    SellHandler
+    SellHandler,
+    TalkHandler,
+    HelpHandler,
+    ComplimentHandler,
+    InsultHandler,
+    ThreatHandler
 )
+
+from systems.consequences import ConsequenceSystem
 
 
 class ActionResolver:
@@ -89,6 +96,31 @@ class ActionResolver:
         )
 
         self.register_handler(
+            "talk",
+            TalkHandler()
+        )
+
+        self.register_handler(
+            "help",
+            HelpHandler()
+        )
+
+        self.register_handler(
+            "compliment",
+            ComplimentHandler()
+        )
+
+        self.register_handler(
+            "insult",
+            InsultHandler()
+        )
+
+        self.register_handler(
+            "threat",
+            ThreatHandler()
+        )
+
+        self.register_handler(
             "buy",
             BuyHandler()
         )
@@ -98,38 +130,23 @@ class ActionResolver:
             SellHandler()
         )
 
+        self.register_basic_outcome("eat")
+        self.register_basic_outcome("sleep")
+        self.register_basic_outcome("work")
+        self.register_basic_outcome("practice")
+        self.register_basic_outcome("explore")
+        self.register_basic_outcome("buy")
+        self.register_basic_outcome("sell")
+        self.register_basic_outcome("talk")
+        self.register_basic_outcome("help")
+        self.register_basic_outcome("compliment")
+        self.register_basic_outcome("insult")
+        self.register_basic_outcome("threat")
+
         self.register_social_outcome()
 
-        self.register_basic_outcome(
-            "eat"
-        )
-
-        self.register_basic_outcome(
-            "sleep"
-        )
-
-        self.register_basic_outcome(
-            "work"
-        )
-
-        self.register_basic_outcome(
-            "practice"
-        )
-
-        self.register_basic_outcome(
-            "explore"
-        )
-
-        self.register_basic_outcome(
-            "buy"
-        )
-
-        self.register_basic_outcome(
-            "sell"
-        )
-
     # ==========================================
-    # OUTCOME CONFIGURATION
+    # BASIC OUTCOME
     # ==========================================
 
     def register_basic_outcome(
@@ -151,6 +168,10 @@ class ActionResolver:
             action_type,
             system
         )
+
+    # ==========================================
+    # SOCIAL OUTCOME
+    # ==========================================
 
     def register_social_outcome(self):
 
@@ -205,6 +226,23 @@ class ActionResolver:
         world
     ):
 
+        # ==========================================
+        # DEAD PEOPLE CANNOT ACT
+        # ==========================================
+
+        if not person.is_alive:
+
+            return (
+                None,
+                None,
+                f"{person.full_name} "
+                f"is dead and cannot act."
+            )
+
+        # ==========================================
+        # FIND HANDLER
+        # ==========================================
+
         handler = self.handlers.get(
             action.action_type
         )
@@ -214,10 +252,14 @@ class ActionResolver:
             return (
                 None,
                 None,
-                f"{person.name} "
+                f"{person.full_name} "
                 f"does not know how to "
                 f"{action.action_type}."
             )
+
+        # ==========================================
+        # FIND OUTCOME SYSTEM
+        # ==========================================
 
         outcome_system = (
             self.outcomes.get(
@@ -228,6 +270,10 @@ class ActionResolver:
         if outcome_system is None:
 
             outcome_system = OutcomeSystem()
+
+        # ==========================================
+        # RESOLVE OUTCOME
+        # ==========================================
 
         outcome = outcome_system.resolve(
             person,
@@ -240,10 +286,14 @@ class ActionResolver:
             return (
                 outcome,
                 None,
-                f"{person.name} failed to "
+                f"{person.full_name} failed to "
                 f"successfully complete "
                 f"{action.action_type}."
             )
+
+        # ==========================================
+        # EXECUTE ACTION
+        # ==========================================
 
         result = handler.execute(
             person,
@@ -252,8 +302,39 @@ class ActionResolver:
             outcome
         )
 
+        # ==========================================
+        # APPLY CONSEQUENCES
+        # ==========================================
+
+        event = getattr(
+            result,
+            "event",
+            None
+        )
+
+        if event is not None:
+
+            target = action.target
+
+            consequences = (
+                ConsequenceSystem.apply(
+                    person,
+                    target,
+                    event,
+                    world
+                )
+            )
+
+        else:
+
+            consequences = []
+
+        # ==========================================
+        # RETURN
+        # ==========================================
+
         return (
             outcome,
             result,
-            result
+            result.message
         )

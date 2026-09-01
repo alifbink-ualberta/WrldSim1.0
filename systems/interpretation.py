@@ -5,31 +5,7 @@ from simulation.interpretation import Interpretation
 from simulation.intent import PerceivedIntent
 
 
-def interpret_event(person, perception):
-
-    # ==========================================
-    # PERCEPTION
-    # ==========================================
-
-    event = perception["event"]
-
-    clarity = perception["clarity"]
-
-    if not perception["noticed"]:
-
-        interpretation = Interpretation(
-            person=person,
-            event=event,
-            meaning=(
-                f"{person.full_name} did not "
-                f"notice the event."
-            ),
-            emotional_impact=0.0
-        )
-
-        interpretation.perceived_intent = None
-
-        return interpretation
+def interpret_event(person, event):
 
     event_type = event.event_type
 
@@ -81,16 +57,6 @@ def interpret_event(person, perception):
         impact = event.significance
 
     # ==========================================
-    # PERCEPTION CLARITY
-    # ==========================================
-
-    # Someone who only partially perceives an
-    # event should generally experience less
-    # certainty and emotional impact.
-
-    impact *= clarity
-
-    # ==========================================
     # FIND OTHER PERSON
     # ==========================================
 
@@ -107,29 +73,31 @@ def interpret_event(person, perception):
     # PERSONALITY
     # ==========================================
 
+    personality = person.personality
+
     if event_type == "insult":
 
         impact += (
-            person.personality.narcissism
+            personality.narcissism
             * 0.3
         )
 
         impact += (
-            person.personality.neuroticism
+            personality.neuroticism
             * 0.2
         )
 
-    if event_type == "compliment":
+    elif event_type == "compliment":
 
         impact += (
-            person.personality.narcissism
+            personality.narcissism
             * 0.15
         )
 
-    if event_type == "threat":
+    elif event_type == "threat":
 
         impact += (
-            person.personality.neuroticism
+            personality.neuroticism
             * 0.3
         )
 
@@ -156,7 +124,7 @@ def interpret_event(person, perception):
 
         if event_type == "insult":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 meaning = (
                     "Someone I trust has insulted me."
@@ -164,11 +132,11 @@ def interpret_event(person, perception):
 
                 impact -= 0.15
 
-            if feelings["affection"] > 50:
+            if feelings["affection"] > 0.5:
 
                 impact -= 0.10
 
-            if feelings["resentment"] > 50:
+            if feelings["resentment"] > 0.5:
 
                 meaning = (
                     "Someone I resent is deliberately "
@@ -177,11 +145,11 @@ def interpret_event(person, perception):
 
                 impact += 0.15
 
-            if feelings["respect"] > 50:
+            if feelings["respect"] > 0.5:
 
                 impact += 0.05
 
-            if feelings["fear"] > 50:
+            if feelings["fear"] > 0.5:
 
                 meaning = (
                     "Someone I fear has "
@@ -196,13 +164,13 @@ def interpret_event(person, perception):
 
         elif event_type == "help":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 meaning = (
                     "Someone I trust has helped me."
                 )
 
-            if feelings["affection"] > 50:
+            if feelings["affection"] > 0.5:
 
                 impact += 0.10
 
@@ -212,14 +180,14 @@ def interpret_event(person, perception):
 
         elif event_type == "gift":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 meaning = (
                     "Someone I trust has given "
                     "me something."
                 )
 
-            if feelings["resentment"] > 50:
+            if feelings["resentment"] > 0.5:
 
                 meaning = (
                     "Someone I resent has given "
@@ -234,7 +202,7 @@ def interpret_event(person, perception):
 
         elif event_type == "threat":
 
-            if feelings["fear"] > 50:
+            if feelings["fear"] > 0.5:
 
                 meaning = (
                     "Someone I fear has "
@@ -243,7 +211,7 @@ def interpret_event(person, perception):
 
                 impact += 0.20
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 impact -= 0.10
 
@@ -264,7 +232,7 @@ def interpret_event(person, perception):
 
         if event_type == "insult":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 intention = (
                     "tease or provoke me without "
@@ -273,7 +241,7 @@ def interpret_event(person, perception):
 
                 confidence = 0.6
 
-            elif feelings["resentment"] > 50:
+            elif feelings["resentment"] > 0.5:
 
                 intention = (
                     "deliberately disrespect me"
@@ -281,7 +249,7 @@ def interpret_event(person, perception):
 
                 confidence = 0.8
 
-            elif feelings["fear"] > 50:
+            elif feelings["fear"] > 0.5:
 
                 intention = (
                     "intimidate me"
@@ -303,7 +271,7 @@ def interpret_event(person, perception):
 
         elif event_type == "help":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 intention = (
                     "help me because they care"
@@ -325,7 +293,7 @@ def interpret_event(person, perception):
 
         elif event_type == "gift":
 
-            if feelings["trust"] > 50:
+            if feelings["trust"] > 0.5:
 
                 intention = (
                     "give me something sincerely"
@@ -333,7 +301,7 @@ def interpret_event(person, perception):
 
                 confidence = 0.7
 
-            elif feelings["resentment"] > 50:
+            elif feelings["resentment"] > 0.5:
 
                 intention = (
                     "manipulate or influence me"
@@ -361,24 +329,12 @@ def interpret_event(person, perception):
 
             confidence = 0.8
 
-        # --------------------------------------
-        # PERCEPTION UNCERTAINTY
-        # --------------------------------------
-
-        # Poor perception means weaker confidence
-        # in the interpretation.
-
-        confidence *= clarity
-
         perceived_intent = PerceivedIntent(
             person=person,
             other=other,
             event=event,
             intention=intention,
-            confidence=round(
-                confidence,
-                2
-            )
+            confidence=confidence
         )
 
     # ==========================================
@@ -387,7 +343,10 @@ def interpret_event(person, perception):
 
     impact = max(
         0.0,
-        min(1.0, impact)
+        min(
+            1.0,
+            impact
+        )
     )
 
     # ==========================================
@@ -403,8 +362,6 @@ def interpret_event(person, perception):
             2
         )
     )
-
-    # Attach perceived intent.
 
     interpretation.perceived_intent = (
         perceived_intent

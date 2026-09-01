@@ -4,12 +4,15 @@
 from simulation.opportunity import Opportunity
 
 
-def generate_opportunities(person, world):
+def generate_opportunities(
+    person,
+    world
+):
 
     opportunities = []
 
     # ==========================================
-    # BASIC PERSONAL OPPORTUNITIES
+    # SURVIVAL
     # ==========================================
 
     opportunities.append(
@@ -20,6 +23,10 @@ def generate_opportunities(person, world):
         Opportunity("sleep")
     )
 
+    # ==========================================
+    # PERSONAL DEVELOPMENT
+    # ==========================================
+
     opportunities.append(
         Opportunity("practice")
     )
@@ -29,7 +36,15 @@ def generate_opportunities(person, world):
     )
 
     # ==========================================
-    # SOCIAL OPPORTUNITIES
+    # WORK
+    # ==========================================
+
+    opportunities.append(
+        Opportunity("work")
+    )
+
+    # ==========================================
+    # SOCIAL INTERACTIONS
     # ==========================================
 
     for other in world.people:
@@ -37,32 +52,74 @@ def generate_opportunities(person, world):
         if other == person:
             continue
 
-        # People in the same location can interact.
+        if not other.is_alive:
+            continue
+
+        # --------------------------------------
+        # Must be co-located
+        # --------------------------------------
 
         if (
-            person.location is not None
-            and other.location == person.location
+            person.location is None
+            or other.location != person.location
         ):
 
-            opportunities.append(
-                Opportunity(
-                    "socialize",
-                    target=other
-                )
+            continue
+
+        # --------------------------------------
+        # Conversation
+        # --------------------------------------
+
+        opportunities.append(
+            Opportunity(
+                "talk",
+                target=other
             )
+        )
 
-    # ==========================================
-    # WORK
-    # ==========================================
+        # --------------------------------------
+        # Help
+        # --------------------------------------
 
-    # For now, work is available everywhere.
-    #
-    # Later this will come from actual workplaces,
-    # employers, contracts and occupations.
+        opportunities.append(
+            Opportunity(
+                "help",
+                target=other
+            )
+        )
 
-    opportunities.append(
-        Opportunity("work")
-    )
+        # --------------------------------------
+        # Compliment
+        # --------------------------------------
+
+        opportunities.append(
+            Opportunity(
+                "compliment",
+                target=other
+            )
+        )
+
+        # --------------------------------------
+        # Insult
+        # --------------------------------------
+
+        opportunities.append(
+            Opportunity(
+                "insult",
+                target=other
+            )
+        )
+
+        # --------------------------------------
+        # Threaten
+        # --------------------------------------
+
+        opportunities.append(
+            Opportunity(
+                "threat",
+                target=other
+            )
+        )
 
     # ==========================================
     # FILTER

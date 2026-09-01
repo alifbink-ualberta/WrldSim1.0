@@ -5,40 +5,23 @@ class Goal:
 
     def __init__(
         self,
-        name,
+        description,
         motivation,
         priority=0.5,
-        progress=0.0,
+        target=None,
         desired_effects=None
     ):
 
-        # ==========================================
-        # IDENTITY
-        # ==========================================
-
-        self.name = name
-
-        # ==========================================
-        # MOTIVATION
-        # ==========================================
+        self.description = description
 
         self.motivation = motivation
 
-        # ==========================================
-        # PRIORITY
-        # ==========================================
+        self.priority = max(
+            0.0,
+            min(1.0, priority)
+        )
 
-        self.priority = priority
-
-        # ==========================================
-        # PROGRESS
-        # ==========================================
-
-        self.progress = progress
-
-        # ==========================================
-        # DESIRED EFFECTS
-        # ==========================================
+        self.target = target
 
         self.desired_effects = (
             desired_effects
@@ -46,47 +29,44 @@ class Goal:
             else {}
         )
 
-        # ==========================================
-        # STATE
-        # ==========================================
-
         self.completed = False
-        self.abandoned = False
+        self.failed = False
 
     # ==================================================
-    # PROGRESS
+    # EFFECT
     # ==================================================
 
-    def advance(self, amount):
-
-        if self.completed or self.abandoned:
-            return
-
-        self.progress += amount
-
-        if self.progress >= 1.0:
-
-            self.progress = 1.0
-            self.completed = True
-
-    # ==================================================
-    # ABANDON
-    # ==================================================
-
-    def abandon(self):
-
-        if not self.completed:
-            self.abandoned = True
-
-    # ==================================================
-    # DESIRED EFFECT
-    # ==================================================
-
-    def get_desired_effect(self, name):
+    def get_desired_effect(
+        self,
+        effect_name
+    ):
 
         return self.desired_effects.get(
-            name,
+            effect_name,
             0.0
+        )
+
+    # ==================================================
+    # COMPLETE / FAIL
+    # ==================================================
+
+    def complete(self):
+
+        self.completed = True
+
+    def fail(self):
+
+        self.failed = True
+
+    # ==================================================
+    # STATUS
+    # ==================================================
+
+    def is_active(self):
+
+        return (
+            not self.completed
+            and not self.failed
         )
 
     # ==================================================
@@ -100,12 +80,11 @@ class Goal:
         if self.completed:
             status = "completed"
 
-        elif self.abandoned:
-            status = "abandoned"
+        elif self.failed:
+            status = "failed"
 
         return (
-            f"{self.name} "
-            f"[priority={self.priority:.2f}, "
-            f"progress={self.progress:.2f}, "
-            f"{status}]"
+            f"{self.description} "
+            f"[{status}, "
+            f"priority={self.priority:.2f}]"
         )

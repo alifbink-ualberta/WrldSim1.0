@@ -1,9 +1,13 @@
 # simulation/world.py
 
 from simulation.activity import Activity
+
+from systems.behavior_registry import BehaviorRegistry
+from systems.decision_making import choose_action
+from systems.action_resolver import ActionResolver
 from systems.actions import get_action_duration
 from systems.needs import update_needs
-from systems.upbringing import UpbringingSystem
+
 
 class World:
 
@@ -20,7 +24,6 @@ class World:
         self.hour = 0
         self.minute = 0
 
-        # One simulation minute = one simulation tick.
         self.current_time_minutes = 0
 
         # ==========================================
@@ -38,7 +41,19 @@ class World:
         self.circumstances = []
 
         # ==========================================
-        # SIMULATION STATE
+        # SIMULATION SYSTEMS
+        # ==========================================
+
+        self.behavior_registry = (
+            BehaviorRegistry()
+        )
+
+        self.action_resolver = (
+            ActionResolver()
+        )
+
+        # ==========================================
+        # STATE
         # ==========================================
 
         self.running = True
@@ -49,7 +64,9 @@ class World:
 
     def add_person(self, person):
 
-        self.people.append(person)
+        if person not in self.people:
+
+            self.people.append(person)
 
     # ==============================================
     # LOCATIONS
@@ -57,7 +74,9 @@ class World:
 
     def add_location(self, location):
 
-        self.locations[location.name] = location
+        self.locations[
+            location.name
+        ] = location
 
     def move_person(
         self,
@@ -68,47 +87,19 @@ class World:
         if location_name not in self.locations:
             return False
 
-        # Remove from previous location.
-
         for location in self.locations.values():
 
             location.leave(person)
 
-        # Add to new location.
-
-        location = self.locations[location_name]
+        location = self.locations[
+            location_name
+        ]
 
         location.enter(person)
 
+        person.location = location
+
         return True
-
-    # ==============================================
-    # CIRCUMSTANCES
-    # ==============================================
-
-    def add_circumstance(self, circumstance):
-
-        self.circumstances.append(
-            circumstance
-        )
-
-    def remove_circumstance(self, circumstance):
-
-        if circumstance in self.circumstances:
-
-            self.circumstances.remove(
-                circumstance
-            )
-
-    def has_circumstance(self, name):
-
-        for circumstance in self.circumstances:
-
-            if circumstance.name == name:
-
-                return True
-
-        return False
 
     # ==============================================
     # TIME
@@ -127,7 +118,6 @@ class World:
         if self.minute >= 60:
 
             self.minute = 0
-
             self.hour += 1
 
         # ------------------------------------------
@@ -137,7 +127,6 @@ class World:
         if self.hour >= 24:
 
             self.hour = 0
-
             self.day += 1
 
             self.daily_update()
@@ -149,7 +138,6 @@ class World:
         if self.day > 30:
 
             self.day = 1
-
             self.month += 1
 
             self.monthly_update()
@@ -161,7 +149,6 @@ class World:
         if self.month > 12:
 
             self.month = 1
-
             self.year += 1
 
             self.yearly_update()
@@ -200,11 +187,20 @@ class World:
             remaining_minutes=duration
         )
 
+        target_text = ""
+
+        if action.target is not None:
+
+            target_text = (
+                f" with {action.target.full_name}"
+            )
+
         print(
             f"{self.timestamp()} "
             f"{person.full_name} begins "
-            f"{action.action_type} "
-            f"(score={score:.1f}, "
+            f"{action.action_type}"
+            f"{target_text} "
+            f"(score={score:.2f}, "
             f"duration={duration}m)"
         )
 
@@ -214,10 +210,9 @@ class World:
 
     def choose_action(self, person):
 
-        return self.decision_system.choose_action(
+        return choose_action(
             person,
-            self,
-            self.behavior_registry
+            self
         )
 
     # ==============================================
@@ -259,6 +254,7 @@ class World:
         )
 
         print(
+            f"{self.timestamp()} "
             f"    → {message}"
         )
 
@@ -280,56 +276,64 @@ class World:
         if not self.running:
             return
 
+        # ==========================================
+        # NEEDS
+        # ==========================================
+
         for person in self.people:
 
-            # --------------------------------------
-            # UPDATE NEEDS
-            # --------------------------------------
+            if not person.is_alive:
+                continue
 
             update_needs(
                 person,
                 minutes=1
             )
 
-            # --------------------------------------
-            # DEVELOPMENT
-            # --------------------------------------
-
-            person.update_development_stage()
-
-            UpbringingSystem.update(
-                person,
-                self,
-                minutes=1
-            )
-
-        # ------------------------------------------
-        # PROCESS PEOPLE
-        # ------------------------------------------
+        # ==========================================
+        # PEOPLE
+        # ==========================================
 
         for person in self.people:
 
-            # Existing activity takes priority.
+            if not person.is_alive:
+                continue
+
+            # --------------------------------------
+            # EXISTING ACTIVITY
+            # --------------------------------------
 
             if person.current_activity is not None:
 
-                self.update_activity(person)
+                self.update_activity(
+                    person
+                )
 
                 continue
+
+            # --------------------------------------
+            # GOALS
+            # --------------------------------------
+
+            if not person.goals:
+
+                person.update_goals(
+                    self
+                )
 
             # --------------------------------------
             # DECISION
             # --------------------------------------
 
-            action, score = self.choose_action(
-                person
+            action, score = (
+                self.choose_action(person)
             )
 
             if action is None:
                 continue
 
             # --------------------------------------
-            # START ACTIVITY
+            # START
             # --------------------------------------
 
             self.start_activity(
@@ -338,9 +342,9 @@ class World:
                 score
             )
 
-        # ------------------------------------------
-        # ADVANCE WORLD CLOCK
-        # ------------------------------------------
+        # ==========================================
+        # CLOCK
+        # ==========================================
 
         self.advance_minute()
 
@@ -350,7 +354,18 @@ class World:
 
     def daily_update(self):
 
-        pass
+        # Reconsider goals every day.
+
+        for person in self.people:
+
+            if not person.is_alive:
+                continue
+
+            person.update_goals(
+                self
+            )
+
+            person.update_development_stage()
 
     # ==============================================
     # MONTHLY UPDATE
@@ -359,7 +374,8 @@ class World:
     def monthly_update(self):
 
         print(
-            f"\n=== MONTH {self.month}, "
+            f"\n=== MONTH "
+            f"{self.month}, "
             f"YEAR {self.year} ===\n"
         )
 
@@ -371,12 +387,18 @@ class World:
 
         print(
             f"\n######## YEAR "
-            f"{self.year} ########\n"
+            f"{self.year} "
+            f"########\n"
         )
 
         for person in self.people:
 
+            if not person.is_alive:
+                continue
+
             person.age += 1
+
+            person.update_development_stage()
 
     # ==============================================
     # RUN MINUTES
@@ -422,7 +444,7 @@ class World:
         )
 
     # ==============================================
-    # STOP / START
+    # CONTROL
     # ==============================================
 
     def stop(self):
@@ -432,28 +454,3 @@ class World:
     def start(self):
 
         self.running = True
-
-    # ==============================================
-    # REPRODUCTION
-    # ==============================================
-
-    def have_child(
-        self,
-        parent_a,
-        parent_b,
-        first_name
-    ):
-
-        from systems.reproduction import (
-            ReproductionSystem
-        )
-
-        return (
-            ReproductionSystem
-            .have_child(
-                parent_a,
-                parent_b,
-                first_name,
-                self
-            )
-        )

@@ -80,13 +80,24 @@ class Person:
         self.knowledge = {}
 
         self.experiences = []
-        self.development_stage = "adult" if age >= 18 else "child"
+
+        self.development_stage = (
+            "adult"
+            if age >= 18
+            else "child"
+        )
 
         # ==========================================
         # SOCIAL
         # ==========================================
 
         self.relationships = {}
+
+        # ==========================================
+        # PERSONAL CIRCUMSTANCES
+        # ==========================================
+
+        self.circumstances = []
 
         # ==========================================
         # SURVIVAL
@@ -107,6 +118,12 @@ class Person:
 
         self.location = None
 
+        # ==========================================
+        # CURRENT ACTIVITY
+        # ==========================================
+
+        self.current_activity = None
+
     # ==============================================
     # IDENTITY
     # ==============================================
@@ -115,6 +132,13 @@ class Person:
     def full_name(self):
 
         return f"{self.first_name} {self.last_name}"
+
+    # Backward compatibility for older systems.
+
+    @property
+    def name(self):
+
+        return self.full_name
 
     # ==============================================
     # MEMORY
@@ -142,15 +166,13 @@ class Person:
             )
         )
 
-        self.memories.append(
-            memory
-        )
+        self.memories.append(memory)
 
         return memory
 
-    # ==================================================
+    # ==============================================
     # DEVELOPMENT
-    # ==================================================
+    # ==============================================
 
     def add_experience(
         self,
@@ -180,13 +202,10 @@ class Person:
             DevelopmentSystem
         )
 
-        return (
-            DevelopmentSystem
-            .gain_skill_experience(
-                self,
-                skill_name,
-                amount
-            )
+        return DevelopmentSystem.gain_skill_experience(
+            self,
+            skill_name,
+            amount
         )
 
     def get_skill(
@@ -198,31 +217,25 @@ class Person:
             DevelopmentSystem
         )
 
-        return (
-            DevelopmentSystem
-            .get_skill(
-                self,
-                skill_name
-            )
+        return DevelopmentSystem.get_skill(
+            self,
+            skill_name
         )
 
     def update_development_stage(self):
 
         if self.age < 5:
-
             self.development_stage = "infant"
 
         elif self.age < 13:
-
             self.development_stage = "child"
 
         elif self.age < 18:
-
             self.development_stage = "adolescent"
 
         else:
-
             self.development_stage = "adult"
+
     # ==============================================
     # RELATIONSHIPS
     # ==============================================
@@ -242,14 +255,13 @@ class Person:
             )
 
             self.relationships[other] = relationship
-
             other.relationships[self] = relationship
 
         return self.relationships[other]
 
-    # ==================================================
+    # ==============================================
     # SOCIAL INTERACTION
-    # ==================================================
+    # ==============================================
 
     def interact_with(
         self,
@@ -263,24 +275,19 @@ class Person:
             SocialInteractionSystem
         )
 
-        return (
-            SocialInteractionSystem.perform(
-                self,
-                other,
-                interaction_type,
-                world,
-                intensity
-            )
+        return SocialInteractionSystem.perform(
+            self,
+            other,
+            interaction_type,
+            world,
+            intensity
         )
 
-    # ==================================================
+    # ==============================================
     # PERCEPTION
-    # ==================================================
+    # ==============================================
 
-    def perceive_event(
-        self,
-        event
-    ):
+    def perceive_event(self, event):
 
         from systems.perception import (
             PerceptionSystem
@@ -304,25 +311,63 @@ class Person:
             PsychologicalResponseSystem
         )
 
-        return (
+        response = (
             PsychologicalResponseSystem.process(
                 self,
                 interpretation
             )
         )
 
+        from systems.motivation_dynamics import (
+            MotivationDynamicsSystem
+        )
+
+        MotivationDynamicsSystem.process(
+            self,
+            interpretation.event,
+            interpretation,
+            response
+        )
+
+        return response
+
+    # ==============================================
+    # GOALS
+    # ==============================================
+
+    def update_goals(self, world):
+
+        from systems.goal_generation import (
+            GoalGenerationSystem
+        )
+
+        self.goals = GoalGenerationSystem.generate(
+            self,
+            world
+        )
+
+        return self.goals
+
     # ==============================================
     # INVENTORY
     # ==============================================
 
-    def add_item(self, item, amount=1):
+    def add_item(
+        self,
+        item,
+        amount=1
+    ):
 
         self.inventory[item] = (
             self.inventory.get(item, 0)
             + amount
         )
 
-    def remove_item(self, item, amount=1):
+    def remove_item(
+        self,
+        item,
+        amount=1
+    ):
 
         if self.inventory.get(item, 0) < amount:
             return False
@@ -334,7 +379,11 @@ class Person:
 
         return True
 
-    def has_item(self, item, amount=1):
+    def has_item(
+        self,
+        item,
+        amount=1
+    ):
 
         return (
             self.inventory.get(item, 0)

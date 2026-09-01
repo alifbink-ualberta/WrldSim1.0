@@ -5,24 +5,66 @@ class Interaction:
 
     def __init__(
         self,
-        initiator,
-        target,
         interaction_type,
-        description="",
-        intensity=0.5
+        actor,
+        target=None,
+        intensity=0.5,
+        subject=None
     ):
 
-        self.initiator = initiator
+        self.interaction_type = interaction_type
+
+        self.actor = actor
         self.target = target
 
-        self.interaction_type = interaction_type
-        self.description = description
-
+        # 0.0 - 1.0
         self.intensity = max(
             0.0,
             min(1.0, intensity)
         )
 
+        # Optional third-party subject.
+        #
+        # Example:
+        # Arthur gossips with Thomas about Edward.
+        #
+        self.subject = subject
+
+    def participants(self):
+
+        people = [self.actor]
+
+        if (
+            self.target is not None
+            and self.target not in people
+        ):
+
+            people.append(
+                self.target
+            )
+
+        if (
+            self.subject is not None
+            and self.subject not in people
+        ):
+
+            people.append(
+                self.subject
+            )
+
+        return people
+
     def __str__(self):
 
-        return self.description
+        if self.target is None:
+
+            return (
+                f"{self.actor.full_name} "
+                f"{self.interaction_type}"
+            )
+
+        return (
+            f"{self.actor.full_name} "
+            f"{self.interaction_type} "
+            f"{self.target.full_name}"
+        )
